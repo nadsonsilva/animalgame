@@ -35,20 +35,21 @@ jobs:
         cd frontend  # Navega até o diretório do frontend
         npm test -- --watch=false --browsers=ChromeHeadless  # Executa os testes
 
-    # Passo 5: Configurar JDK para o Spring Boot
-    - name: Set up JDK 11
+    # Passo 5: Configurar JDK 17
+    - name: Set up JDK 17
       uses: actions/setup-java@v2
       with:
-        java-version: '11'  # Configura o JDK 11 necessário para Spring Boot
+        java-version: '17'  # Versão correta do JDK
+        distribution: 'zulu'  # Usando a distribuição Zulu (opcional)
 
-    # Passo 6: Instalar dependências do Spring Boot
+    # Passo 6: Instalar dependências do Spring Boot (usando Gradle)
     - name: Install Spring Boot dependencies
       run: |
         cd backend  # Navega até o diretório do backend
-        ./mvnw install  # Instala as dependências do Spring Boot
+        ./gradlew build --no-daemon  # Instala as dependências do Spring Boot e compila o projeto
 
-    # Passo 7: Rodar os testes do Spring Boot
+    # Passo 7: Rodar os testes do Spring Boot (usando Gradle)
     - name: Run Spring Boot tests
       run: |
         cd backend  # Navega até o diretório do backend
-        ./mvnw test  # Executa os testes
+        ./gradlew test --no-daemon  # Executa os testes do Spring Boot
