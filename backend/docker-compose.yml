@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: root # Senha do root (você pode mudar)
+      MYSQL_DATABASE: animalgame # Nome do banco de dados a ser criado
+    ports:
+      - "3306:3306"  # Acessando a porta 3306 no localhost
+    volumes:
+      - mysql-data:/var/lib/mysql  # Persistência de dados
+
+volumes:
+  mysql-data:
