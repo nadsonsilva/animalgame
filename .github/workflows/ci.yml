@@ -42,14 +42,14 @@ jobs:
         java-version: '17'  # Versão correta do JDK
         distribution: 'zulu'  # Usando a distribuição Zulu (opcional)
 
-    # Passo 6: Instalar dependências do Spring Boot (usando Gradle)
+    # Passo 6: Instalar dependências do Spring Boot (usando Maven)
     - name: Install Spring Boot dependencies
       run: |
         cd backend  # Navega até o diretório do backend
-        ./gradlew build --no-daemon  # Instala as dependências do Spring Boot e compila o projeto
+        mvn install -DskipTests  # Instala as dependências do Maven e compila o projeto
 
-    # Passo 7: Rodar os testes do Spring Boot (usando Gradle)
+    # Passo 7: Rodar os testes do Spring Boot (usando Maven)
     - name: Run Spring Boot tests
       run: |
         cd backend  # Navega até o diretório do backend
-        ./gradlew test --no-daemon  # Executa os testes do Spring Boot
+        mvn test  # Executa os testes do Spring Boot
