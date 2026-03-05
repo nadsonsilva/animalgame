@@ -1,55 +1,65 @@
-name: CI Workflow
+name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest  # Configuração para rodar em Ubuntu
+  frontend:
+    name: Frontend (Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
-    # Passo 1: Check out o código do repositório
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Passo 2: Configurar Node.js para Angular
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      # Angular 21 + npm 11 requer Node >= 20
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
-    # Passo 3: Instalar dependências do Angular
-    - name: Install Angular dependencies
-      run: |
-        cd frontend  # Navega até o diretório do frontend
-        npm install  # Instala as dependências
+      - name: Install dependencies
+        run: npm ci
 
-    # Passo 4: Rodar os testes do Angular
-    - name: Run Angular tests
-      run: |
-        cd frontend  # Navega até o diretório do frontend
-        npm test -- --watch=false --browsers=ChromeHeadless  # Executa os testes
+      - name: Build
+        run: npm run build --if-present
 
-    # Passo 5: Configurar JDK 17
-    - name: Set up JDK 17
-      uses: actions/setup-java@v2
-      with:
-        java-version: '17'  # Versão correta do JDK
-        distribution: 'zulu'  # Usando a distribuição Zulu (opcional)
+      - name: Test
+        run: npm test -- --watch=false
+        continue-on-error: false
 
-    # Passo 6: Instalar dependências do Spring Boot (usando Maven)
-    - name: Install Spring Boot dependencies
-      run: |
-        cd backend  # Navega até o diretório do backend
-        mvn install -DskipTests  # Instala as dependências do Maven e compila o projeto
+  backend:
+    name: Backend (Spring Boot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
-    # Passo 7: Rodar os testes do Spring Boot (usando Maven)
-    - name: Run Spring Boot tests
-      run: |
-        cd backend  # Navega até o diretório do backend
-        mvn test  # Executa os testes do Spring Boot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Ensure mvnw is executable
+        run: chmod +x mvnw
+
+      - name: Run tests
+        run: ./mvnw -B test
