@@ -1,5 +1,6 @@
 package com.example.animalgame.service;
 
+import com.example.animalgame.dto.ApostaHistoricoResponseDTO;
 import com.example.animalgame.dto.ApostaResponseDTO;
 import com.example.animalgame.exception.RegraNegocioException;
 import com.example.animalgame.model.Animal;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ApostaService {
@@ -35,56 +37,62 @@ public class ApostaService {
         this.sorteioService = sorteioService;
     }
 
+    /**
+     * Método público usado internamente caso precise salvar apenas a entidade aposta
+     */
     @Transactional
     public Aposta registrarAposta(Long usuarioId, Integer grupoAnimal, Double valor) {
+        return processarAposta(usuarioId, grupoAnimal, valor).apostaSalva;
+    }
+
+    /**
+     * Método principal usado pelo controller (retorna resumo da aposta)
+     */
+    @Transactional
+    public ApostaResponseDTO registrarApostaComResumo(Long usuarioId, Integer grupoAnimal, Double valor) {
+
+        ResultadoAposta resultado = processarAposta(usuarioId, grupoAnimal, valor);
+
+        return new ApostaResponseDTO(
+                resultado.animalEscolhido.getGrupo(),
+                resultado.animalEscolhido.getNome(),
+                resultado.grupoSorteado,
+                resultado.animalSorteado.getNome(),
+                resultado.venceu,
+                resultado.premio,
+                resultado.valorApostado
+        );
+    }
+
+    /**
+     * Histórico de apostas por usuário (DTO)
+     */
+    public List<ApostaHistoricoResponseDTO> listarHistorico(Long usuarioId) {
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
 
-        Animal animal = animalRepository.findByGrupo(grupoAnimal)
-                .orElseThrow(() -> new RegraNegocioException("Animal não encontrado"));
-
-        if (valor <= 0) {
-            throw new RegraNegocioException("O valor da aposta deve ser maior que zero");
-        }
-
-        if (usuario.getSaldo() < valor) {
-            throw new RegraNegocioException("Saldo insuficiente");
-        }
-
-        double novoSaldo = usuario.getSaldo() - valor;
-
-        if (novoSaldo < 0) {
-            throw new RegraNegocioException("Saldo não pode ficar negativo");
-        }
-
-        usuario.setSaldo(novoSaldo);
-        usuarioRepository.save(usuario);
-
-        int grupoSorteado = sorteioService.sortearGrupo();
-
-        boolean venceu = grupoAnimal.equals(grupoSorteado);
-
-        double premio = venceu ? sorteioService.calcularPremio(valor) : 0.0;
-
-        if (venceu) {
-            usuario.setSaldo(usuario.getSaldo() + premio);
-            usuarioRepository.save(usuario);
-        }
-
-        Aposta aposta = new Aposta();
-        aposta.setUsuario(usuario);
-        aposta.setAnimal(animal);
-        aposta.setValor(valor);
-        aposta.setDataHora(LocalDateTime.now());
-        aposta.setVencedora(venceu);
-        aposta.setPremio(premio);
-
-        return apostaRepository.save(aposta);
+        return apostaRepository.findByUsuario(usuario)
+                .stream()
+                .map(this::toHistoricoDTO)
+                .collect(Collectors.toList());
     }
 
-    @Transactional
-    public ApostaResponseDTO registrarApostaComResumo(Long usuarioId, Integer grupoAnimal, Double valor) {
+    /**
+     * Lista todas apostas do sistema (DTO)
+     */
+    public List<ApostaHistoricoResponseDTO> listarTodas() {
+
+        return apostaRepository.findAll()
+                .stream()
+                .map(this::toHistoricoDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Método central da regra de negócio (fluxo único da aposta)
+     */
+    private ResultadoAposta processarAposta(Long usuarioId, Integer grupoAnimal, Double valor) {
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
@@ -131,28 +139,66 @@ public class ApostaService {
         aposta.setVencedora(venceu);
         aposta.setPremio(premio);
 
-        apostaRepository.save(aposta);
+        Aposta apostaSalva = apostaRepository.save(aposta);
 
-        return new ApostaResponseDTO(
-                grupoAnimal,
-                animalEscolhido.getNome(),
+        return new ResultadoAposta(
+                apostaSalva,
+                animalEscolhido,
                 grupoSorteado,
-                animalSorteado.getNome(),
+                animalSorteado,
                 venceu,
                 premio,
                 valor
         );
     }
 
-    public List<Aposta> listarHistorico(Long usuarioId) {
+    /**
+     * Conversão entidade → DTO histórico
+     */
+    private ApostaHistoricoResponseDTO toHistoricoDTO(Aposta aposta) {
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
-
-        return apostaRepository.findByUsuario(usuario);
+        return new ApostaHistoricoResponseDTO(
+                aposta.getId(),
+                aposta.getUsuario().getId(),
+                aposta.getUsuario().getNome(),
+                aposta.getAnimal().getGrupo(),
+                aposta.getAnimal().getNome(),
+                aposta.getValor(),
+                aposta.getDataHora(),
+                aposta.getVencedora(),
+                aposta.getPremio()
+        );
     }
 
-    public List<Aposta> listarTodas() {
-        return apostaRepository.findAll();
+    /**
+     * Classe interna auxiliar para retornar dados do processamento
+     */
+    private static class ResultadoAposta {
+
+        private final Aposta apostaSalva;
+        private final Animal animalEscolhido;
+        private final Integer grupoSorteado;
+        private final Animal animalSorteado;
+        private final Boolean venceu;
+        private final Double premio;
+        private final Double valorApostado;
+
+        public ResultadoAposta(
+                Aposta apostaSalva,
+                Animal animalEscolhido,
+                Integer grupoSorteado,
+                Animal animalSorteado,
+                Boolean venceu,
+                Double premio,
+                Double valorApostado) {
+
+            this.apostaSalva = apostaSalva;
+            this.animalEscolhido = animalEscolhido;
+            this.grupoSorteado = grupoSorteado;
+            this.animalSorteado = animalSorteado;
+            this.venceu = venceu;
+            this.premio = premio;
+            this.valorApostado = valorApostado;
+        }
     }
 }

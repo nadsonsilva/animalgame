@@ -1,8 +1,8 @@
 package com.example.animalgame.controller;
 
+import com.example.animalgame.dto.ApostaHistoricoResponseDTO;
 import com.example.animalgame.dto.ApostaRequestDTO;
 import com.example.animalgame.dto.ApostaResponseDTO;
-import com.example.animalgame.model.Aposta;
 import com.example.animalgame.service.ApostaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,12 +32,12 @@ public class ApostaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Aposta>> listarTodas() {
+    public ResponseEntity<List<ApostaHistoricoResponseDTO>> listarTodas() {
         return ResponseEntity.ok(apostaService.listarTodas());
     }
 
     @GetMapping("/historico/{usuarioId}")
-    public ResponseEntity<List<Aposta>> historico(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<ApostaHistoricoResponseDTO>> historico(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(apostaService.listarHistorico(usuarioId));
     }
 }
