@@ -1,11 +1,13 @@
 package com.example.animalgame.controller;
 
-import com.example.animalgame.exception.RegraNegocioException;
+import com.example.animalgame.dto.ApostaRequestDTO;
+import com.example.animalgame.dto.ApostaResponseDTO;
 import com.example.animalgame.model.Aposta;
 import com.example.animalgame.service.ApostaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -20,15 +22,13 @@ public class ApostaController {
     }
 
     @PostMapping
-    public ResponseEntity<?> registrar(@RequestParam Long usuarioId,
-                                       @RequestParam Integer grupoAnimal,
-                                       @RequestParam Double valor) {
-        try {
-            Aposta aposta = apostaService.registrarAposta(usuarioId, grupoAnimal, valor);
-            return ResponseEntity.ok(aposta);
-        } catch (RegraNegocioException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<ApostaResponseDTO> registrar(@Valid @RequestBody ApostaRequestDTO request) {
+        ApostaResponseDTO resposta = apostaService.registrarApostaComResumo(
+                request.getUsuarioId(),
+                request.getGrupoAnimal(),
+                request.getValor()
+        );
+        return ResponseEntity.ok(resposta);
     }
 
     @GetMapping

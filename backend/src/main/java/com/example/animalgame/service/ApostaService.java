@@ -1,5 +1,6 @@
 package com.example.animalgame.service;
 
+import com.example.animalgame.dto.ApostaResponseDTO;
 import com.example.animalgame.exception.RegraNegocioException;
 import com.example.animalgame.model.Animal;
 import com.example.animalgame.model.Aposta;
@@ -80,6 +81,67 @@ public class ApostaService {
         aposta.setPremio(premio);
 
         return apostaRepository.save(aposta);
+    }
+
+    @Transactional
+    public ApostaResponseDTO registrarApostaComResumo(Long usuarioId, Integer grupoAnimal, Double valor) {
+
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
+
+        Animal animalEscolhido = animalRepository.findByGrupo(grupoAnimal)
+                .orElseThrow(() -> new RegraNegocioException("Animal não encontrado"));
+
+        if (valor <= 0) {
+            throw new RegraNegocioException("O valor da aposta deve ser maior que zero");
+        }
+
+        if (usuario.getSaldo() < valor) {
+            throw new RegraNegocioException("Saldo insuficiente");
+        }
+
+        double novoSaldo = usuario.getSaldo() - valor;
+
+        if (novoSaldo < 0) {
+            throw new RegraNegocioException("Saldo não pode ficar negativo");
+        }
+
+        usuario.setSaldo(novoSaldo);
+        usuarioRepository.save(usuario);
+
+        int grupoSorteado = sorteioService.sortearGrupo();
+
+        Animal animalSorteado = animalRepository.findByGrupo(grupoSorteado)
+                .orElseThrow(() -> new RegraNegocioException("Animal sorteado não encontrado"));
+
+        boolean venceu = grupoAnimal.equals(grupoSorteado);
+
+        double premio = venceu ? sorteioService.calcularPremio(valor) : 0.0;
+
+        if (venceu) {
+            usuario.setSaldo(usuario.getSaldo() + premio);
+            usuarioRepository.save(usuario);
+        }
+
+        Aposta aposta = new Aposta();
+        aposta.setUsuario(usuario);
+        aposta.setAnimal(animalEscolhido);
+        aposta.setValor(valor);
+        aposta.setDataHora(LocalDateTime.now());
+        aposta.setVencedora(venceu);
+        aposta.setPremio(premio);
+
+        apostaRepository.save(aposta);
+
+        return new ApostaResponseDTO(
+                grupoAnimal,
+                animalEscolhido.getNome(),
+                grupoSorteado,
+                animalSorteado.getNome(),
+                venceu,
+                premio,
+                valor
+        );
     }
 
     public List<Aposta> listarHistorico(Long usuarioId) {

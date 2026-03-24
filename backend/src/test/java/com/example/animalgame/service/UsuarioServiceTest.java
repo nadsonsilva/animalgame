@@ -1,5 +1,6 @@
 package com.example.animalgame.service;
 
+import com.example.animalgame.dto.UsuarioRequestDTO;
 import com.example.animalgame.exception.RegraNegocioException;
 import com.example.animalgame.model.Usuario;
 import com.example.animalgame.repository.UsuarioRepository;
@@ -25,6 +26,7 @@ class UsuarioServiceTest {
     private UsuarioService usuarioService;
 
     private Usuario usuario;
+    private UsuarioRequestDTO request;
 
     @BeforeEach
     void setUp() {
@@ -32,35 +34,42 @@ class UsuarioServiceTest {
         usuario.setNome("Nadson");
         usuario.setEmail("nadson@email.com");
         usuario.setSenha("123456");
+        usuario.setSaldo(100.0);
+
+        request = new UsuarioRequestDTO();
+        request.setNome("Nadson");
+        request.setEmail("nadson@email.com");
+        request.setSenha("123456");
+        request.setSaldo(100.0);
     }
 
     @Test
     void deveCadastrarUsuarioComSucesso() {
-        when(usuarioRepository.existsByEmail(usuario.getEmail())).thenReturn(false);
-        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+        when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        Usuario resultado = usuarioService.cadastrar(usuario);
+        Usuario resultado = usuarioService.cadastrar(request);
 
         assertNotNull(resultado);
         assertEquals("Nadson", resultado.getNome());
         assertEquals("nadson@email.com", resultado.getEmail());
 
-        verify(usuarioRepository, times(1)).existsByEmail(usuario.getEmail());
-        verify(usuarioRepository, times(1)).save(usuario);
+        verify(usuarioRepository, times(1)).existsByEmail(request.getEmail());
+        verify(usuarioRepository, times(1)).save(any(Usuario.class));
     }
 
     @Test
     void naoDeveCadastrarUsuarioComEmailDuplicado() {
-        when(usuarioRepository.existsByEmail(usuario.getEmail())).thenReturn(true);
+        when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
         RegraNegocioException exception = assertThrows(
                 RegraNegocioException.class,
-                () -> usuarioService.cadastrar(usuario)
+                () -> usuarioService.cadastrar(request)
         );
 
         assertEquals("E-mail já cadastrado", exception.getMessage());
 
-        verify(usuarioRepository, times(1)).existsByEmail(usuario.getEmail());
+        verify(usuarioRepository, times(1)).existsByEmail(request.getEmail());
         verify(usuarioRepository, never()).save(any());
     }
 

@@ -1,10 +1,12 @@
 package com.example.animalgame.controller;
 
-import com.example.animalgame.exception.RegraNegocioException;
+import com.example.animalgame.dto.UsuarioRequestDTO;
 import com.example.animalgame.model.Usuario;
 import com.example.animalgame.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -18,13 +20,9 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<?> cadastrar(@RequestBody Usuario usuario) {
-        try {
-            Usuario salvo = usuarioService.cadastrar(usuario);
-            return ResponseEntity.ok(salvo);
-        } catch (RegraNegocioException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Usuario> cadastrar(@Valid @RequestBody UsuarioRequestDTO request) {
+        Usuario salvo = usuarioService.cadastrar(request);
+        return ResponseEntity.ok(salvo);
     }
 
     @GetMapping

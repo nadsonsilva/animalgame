@@ -1,5 +1,6 @@
 package com.example.animalgame.service;
 
+import com.example.animalgame.dto.UsuarioRequestDTO;
 import com.example.animalgame.exception.RegraNegocioException;
 import com.example.animalgame.model.Usuario;
 import com.example.animalgame.repository.UsuarioRepository;
@@ -16,10 +17,17 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public Usuario cadastrar(Usuario usuario) {
-        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
+    public Usuario cadastrar(UsuarioRequestDTO request) {
+
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new RegraNegocioException("E-mail já cadastrado");
         }
+
+        Usuario usuario = new Usuario();
+        usuario.setNome(request.getNome());
+        usuario.setEmail(request.getEmail());
+        usuario.setSenha(request.getSenha());
+        usuario.setSaldo(request.getSaldo());
 
         return usuarioRepository.save(usuario);
     }
