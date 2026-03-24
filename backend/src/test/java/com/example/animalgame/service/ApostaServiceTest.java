@@ -88,6 +88,12 @@ class ApostaServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
+
+        Animal animalSorteado = new Animal();
+        animalSorteado.setGrupo(2);
+        animalSorteado.setNome("Águia");
+
+        when(animalRepository.findByGrupo(2)).thenReturn(Optional.of(animalSorteado));
         when(sorteioService.sortearGrupo()).thenReturn(2);
         when(apostaRepository.save(any(Aposta.class))).thenReturn(new Aposta());
 
