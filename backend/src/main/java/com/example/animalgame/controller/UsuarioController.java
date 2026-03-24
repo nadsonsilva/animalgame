@@ -1,12 +1,13 @@
 package com.example.animalgame.controller;
 
 import com.example.animalgame.dto.UsuarioRequestDTO;
-import com.example.animalgame.model.Usuario;
+import com.example.animalgame.dto.UsuarioResponseDTO;
 import com.example.animalgame.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -20,13 +21,13 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<Usuario> cadastrar(@Valid @RequestBody UsuarioRequestDTO request) {
-        Usuario salvo = usuarioService.cadastrar(request);
+    public ResponseEntity<UsuarioResponseDTO> cadastrar(@Valid @RequestBody UsuarioRequestDTO request) {
+        UsuarioResponseDTO salvo = usuarioService.cadastrar(request);
         return ResponseEntity.ok(salvo);
     }
 
     @GetMapping
-    public ResponseEntity<?> listar() {
+    public ResponseEntity<List<UsuarioResponseDTO>> listar() {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 }
