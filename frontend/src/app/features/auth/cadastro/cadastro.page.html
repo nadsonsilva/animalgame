@@ -1,0 +1,85 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="brand-box">
+      <span class="brand-badge">Novo cadastro</span>
+      <h1>Crie sua conta</h1>
+      <p>
+        Cadastre-se para acessar o sistema, escolher seus animais,
+        realizar apostas e acompanhar o histórico.
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="cadastrar()" class="auth-form">
+      <div class="form-group">
+        <label for="nome">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          formControlName="nome"
+          placeholder="Digite seu nome"
+        />
+        <small *ngIf="nome?.touched && nome?.invalid">
+          Informe um nome com pelo menos 3 caracteres.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="Digite seu e-mail"
+        />
+        <small *ngIf="email?.touched && email?.invalid">
+          Informe um e-mail válido.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Crie uma senha"
+        />
+        <small *ngIf="senha?.touched && senha?.invalid">
+          A senha deve ter pelo menos 4 caracteres.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="saldo">Saldo inicial</label>
+        <input
+          id="saldo"
+          type="number"
+          formControlName="saldo"
+          placeholder="Informe o saldo inicial"
+        />
+        <small *ngIf="saldo?.touched && saldo?.invalid">
+          O saldo deve ser zero ou maior.
+        </small>
+      </div>
+
+      <div class="success-box" *ngIf="sucesso">
+        {{ sucesso }}
+      </div>
+
+      <div class="error-box" *ngIf="erro">
+        {{ erro }}
+      </div>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Cadastrando...' : 'Cadastrar' }}
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <span>Já possui conta?</span>
+      <button type="button" class="link-button" (click)="voltarParaLogin()">
+        Ir para login
+      </button>
+    </div>
+  </div>
+</div>

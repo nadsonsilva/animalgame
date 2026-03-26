@@ -1,0 +1,55 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="brand-box">
+      <span class="brand-badge">AnimalGame</span>
+      <h1>Bem-vindo de volta</h1>
+      <p>
+        Entre na sua conta para acessar o sistema do jogo do bicho,
+        acompanhar suas apostas e jogar com segurança.
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="entrar()" class="auth-form">
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="Digite seu e-mail"
+        />
+        <small *ngIf="email?.touched && email?.invalid">
+          Informe um e-mail válido.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Digite sua senha"
+        />
+        <small *ngIf="senha?.touched && senha?.invalid">
+          A senha deve ter pelo menos 4 caracteres.
+        </small>
+      </div>
+
+      <div class="error-box" *ngIf="erro">
+        {{ erro }}
+      </div>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <span>Ainda não tem conta?</span>
+      <button type="button" class="link-button" (click)="irParaCadastro()">
+        Criar cadastro
+      </button>
+    </div>
+  </div>
+</div>

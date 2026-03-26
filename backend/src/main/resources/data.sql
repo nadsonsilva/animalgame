@@ -1,8 +1,8 @@
 INSERT INTO animais (grupo, nome)
 SELECT 1, 'Avestruz' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 1);
 
-INSERT INTO animais (grupo, nome)
-SELECT 2, 'Águia' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 2);
+INSERT INTO animais (grupo, nome) SELECT 2, 'Aguia'
+WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 2);
 
 INSERT INTO animais (grupo, nome)
 SELECT 3, 'Burro' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 3);
@@ -41,10 +41,10 @@ INSERT INTO animais (grupo, nome)
 SELECT 14, 'Gato' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 14);
 
 INSERT INTO animais (grupo, nome)
-SELECT 15, 'Jacaré' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 15);
+SELECT 15, 'Jacare' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 15);
 
 INSERT INTO animais (grupo, nome)
-SELECT 16, 'Leão' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 16);
+SELECT 16, 'Leao' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 16);
 
 INSERT INTO animais (grupo, nome)
 SELECT 17, 'Macaco' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 17);
@@ -53,7 +53,7 @@ INSERT INTO animais (grupo, nome)
 SELECT 18, 'Porco' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 18);
 
 INSERT INTO animais (grupo, nome)
-SELECT 19, 'Pavão' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 19);
+SELECT 19, 'Pavao' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 19);
 
 INSERT INTO animais (grupo, nome)
 SELECT 20, 'Peru' WHERE NOT EXISTS (SELECT 1 FROM animais WHERE grupo = 20);
