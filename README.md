@@ -1,81 +1,111 @@
-# 🐾 **Jogo do Bicho – AnimalGame**
+# AnimalGame
 
-A **AnimalGame** é uma aplicação web desenvolvida para simular o tradicional **Jogo do Bicho**, com fins exclusivamente educacionais.
+Sistema web acadêmico para simular o jogo do bicho, com autenticação JWT, cadastro de usuários, listagem de animais, registro de apostas e histórico individual.
 
-O projeto está sendo desenvolvido como parte da disciplina **Laboratório de Produção de Software**, ministrada pelo professor **Ronem Lavareda** no **IFAM – Campus Parintins**.
+## Tecnologias já mantidas no projeto
 
-⚠️ **Este sistema tem caráter acadêmico e não possui qualquer vínculo com práticas reais de apostas.**
+### Frontend
+- Angular 21
+- TypeScript
+- HTML/CSS
 
-🚧 **Status do Projeto**  
-🚀 Em desenvolvimento.  
-Atualmente, a aplicação está em fase de implementação e evolução contínua, com melhorias sendo adicionadas gradualmente tanto no **front-end** quanto no **back-end**.
+### Backend
+- Java 17
+- Spring Boot 2.7.18
+- Spring Security
+- Spring Data JPA
+- JWT
+- Swagger
 
----
+### Banco de dados
+- MySQL 8
+- Docker Compose
 
-## 🛠️ **Tecnologias Utilizadas**
+## Funcionalidades concluídas
 
-### 🎨 **Front-end**
-- **Angular**: Framework para construção da interface de usuário.
-- **Bootstrap**: Framework CSS para responsividade e design.
+- Cadastro de usuário
+- Login com JWT
+- Proteção das rotas autenticadas
+- CORS configurado para integração com frontend
+- Listagem dos 25 animais do jogo do bicho
+- Registro de aposta com validação de saldo
+- Sorteio automático ao apostar
+- Cálculo de prêmio para aposta vencedora
+- Atualização automática do saldo do usuário
+- Histórico de apostas por usuário
+- Dashboard completo no frontend
+- Swagger habilitado
 
-### ⚙️ **Back-end**
-- **Java**: Linguagem principal para o desenvolvimento do backend.
-- **Spring Boot**: Framework para criação da API RESTful, facilitando a comunicação entre o backend e o frontend.
+## Rotas existentes do backend
 
-### 🗄️ **Banco de Dados**
-- **MySQL**: Banco de dados relacional utilizado para persistência de dados.
-- **Docker**: Utilizado para containerizar o banco de dados MySQL e garantir ambientes de desenvolvimento consistentes.
+### Públicas
+- `POST /usuarios`
+- `POST /auth/login`
 
-### 🔐 **Segurança**
-- **JWT (JSON Web Token)**: Implementação de autenticação e autorização para proteger as rotas da API.
+### Protegidas por token
+- `GET /usuarios`
+- `GET /usuarios/{id}`
+- `GET /animais`
+- `POST /apostas`
+- `GET /apostas`
+- `GET /apostas/historico/{usuarioId}`
+- `POST /sorteio`
 
-### 📦 **Testes**
-- **Cypress**: Framework de testes E2E (End-to-End), utilizado para garantir que o frontend e o backend funcionem corretamente juntos.
+## Como rodar o banco
 
-### 🤖 **Automação**
-- **GitHub Actions**: Ferramenta para integrar e automatizar o processo de **build**, **testes** e **deploy** do projeto.
+Na raiz do projeto:
 
-### 📑 **Documentação**
-- **Swagger**: Utilizado para documentar a API, permitindo que os desenvolvedores interajam com a API de forma visual e intuitiva.
+```bash
+docker-compose up -d
+```
 
----
+## Como rodar o backend
 
-## 📌 **Arquitetura**
+Entre na pasta `backend` e execute:
 
-A aplicação segue o padrão de **arquitetura em camadas**, separando responsabilidades para melhorar a organização, escalabilidade e manutenção do sistema.
+```bash
+./mvnw spring-boot:run
+```
 
-- **Controller**: Gerencia as requisições HTTP e orquestra a execução das lógicas no back-end.
-- **Service**: Implementa a lógica de negócio, delegando as operações ao repositório.
-- **Repository**: Responsável pela persistência de dados no banco de dados.
-- **Model**: Define as entidades que representam os dados da aplicação.
+No Windows PowerShell:
 
-### Diagrama da Arquitetura
-![Diagrama da Arquitetura](Diagrama%20de%20arquitetura%20web%20e%20backend.png)
----
+```powershell
+.\mvnw.cmd spring-boot:run
+```
 
-## 🔐 **Funcionalidades do Back-end (API)**
+Swagger:
 
-A **API REST** está sendo desenvolvida com os seguintes endpoints:
+```text
+http://localhost:8080/swagger-ui.html
+```
 
-### 🔑 **Autenticação**
-- **POST /auth/signup** → Cadastro de usuário.
-- **POST /auth/signin** → Login de usuário.
+## Como rodar o frontend
 
-### 👤 **Usuário**
-- **GET /users/me** → Dados do usuário autenticado.
-- **GET /users/me/bets** → Listar apostas do usuário.
-- **PATCH /users/me/change_password** → Alterar senha.
-- **POST /users/me/deposit** → Realizar depósito de saldo.
+Entre na pasta `frontend` e execute:
 
-### 🐯 **Animais**
-- **GET /animals** → Listar animais disponíveis para apostas.
+```bash
+npm install
+npm start
+```
 
-### 🎲 **Apostas**
-- **POST /bets** → Criar nova aposta.
-- **GET /bets/{id}/result** → Obter o resultado de uma aposta.
+Frontend:
 
----
+```text
+http://localhost:4200
+```
 
-## 📝 **Desenvolvido por**
-**Nadson Silva** 🐾  
-**IFAM – Campus Parintins**
+## Fluxo para testar o sistema
+
+1. Suba o MySQL com Docker.
+2. Inicie o backend.
+3. Inicie o frontend.
+4. Acesse `/cadastro` e crie um usuário com saldo inicial.
+5. Faça login.
+6. No dashboard, escolha um grupo e registre a aposta.
+7. Confira o resultado da rodada e o histórico.
+
+## Observações
+
+- O arquivo `data.sql` popula automaticamente os 25 animais.
+- O projeto mantém as rotas principais já definidas.
+- O frontend já está conectado ao backend em `http://localhost:8080`.

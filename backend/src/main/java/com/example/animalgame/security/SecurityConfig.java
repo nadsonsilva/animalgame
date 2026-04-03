@@ -32,6 +32,9 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.POST, "/auth/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                .antMatchers(HttpMethod.GET, "/usuarios/*").authenticated()
+                .antMatchers(HttpMethod.GET, "/animais").permitAll()
+                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .antMatchers(
                         "/swagger-ui.html",
                         "/swagger-ui/**",

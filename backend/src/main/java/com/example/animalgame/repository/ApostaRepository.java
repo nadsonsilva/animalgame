@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ApostaRepository extends JpaRepository<Aposta, Long> {
-    List<Aposta> findByUsuario(Usuario usuario);
+    List<Aposta> findByUsuarioOrderByDataHoraDesc(Usuario usuario);
 }

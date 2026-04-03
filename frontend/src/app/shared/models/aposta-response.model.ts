@@ -1,9 +1,9 @@
 export interface ApostaResponse {
-  grupoEscolhido: number;
-  nomeAnimalEscolhido: string;
-  grupoSorteado: number;
-  nomeAnimalSorteado: string;
-  venceu: boolean;
-  premio: number;
+  numeroEscolhido: number;
+  animalEscolhido: string;
+  numeroSorteado: number;
+  animalSorteado: string;
+  ganhou: boolean;
+  valorGanho: number;
   valorApostado: number;
 }

@@ -16,6 +16,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> tratarRegraNegocio(RegraNegocioException ex) {
         Map<String, String> erro = new HashMap<>();
         erro.put("erro", ex.getMessage());
+        erro.put("message", ex.getMessage());
         return ResponseEntity.badRequest().body(erro);
     }
 
@@ -34,6 +35,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> tratarGeral(Exception ex) {
         Map<String, String> erro = new HashMap<>();
         erro.put("erro", "Erro interno no servidor");
+        erro.put("message", "Erro interno no servidor");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
     }
 }

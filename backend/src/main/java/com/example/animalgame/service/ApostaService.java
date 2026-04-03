@@ -72,7 +72,7 @@ public class ApostaService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
 
-        return apostaRepository.findByUsuario(usuario)
+        return apostaRepository.findByUsuarioOrderByDataHoraDesc(usuario)
                 .stream()
                 .map(this::toHistoricoDTO)
                 .collect(Collectors.toList());
@@ -85,6 +85,7 @@ public class ApostaService {
 
         return apostaRepository.findAll()
                 .stream()
+                .sorted((a, b) -> b.getDataHora().compareTo(a.getDataHora()))
                 .map(this::toHistoricoDTO)
                 .collect(Collectors.toList());
     }

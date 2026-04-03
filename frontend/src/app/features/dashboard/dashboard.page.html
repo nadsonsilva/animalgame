@@ -1,4 +1,184 @@
-<div class="dashboard-container">
-  <h1>Dashboard</h1>
-  <p>Login realizado com sucesso.</p>
+<div class="dashboard-page">
+  <header class="topbar">
+    <div>
+      <span class="badge">AnimalGame</span>
+      <h1>Painel do jogador</h1>
+      <p>Escolha um grupo, informe o valor e acompanhe o resultado da sua aposta.</p>
+    </div>
+
+    <button class="logout-button" type="button" (click)="logout()">Sair</button>
+  </header>
+
+  <div class="loading-box" *ngIf="carregandoPagina">Carregando informações do sistema...</div>
+
+  <div class="error-box" *ngIf="erro && !carregandoPagina">
+    {{ erro }}
+  </div>
+
+  <ng-container *ngIf="!carregandoPagina && !erro">
+    <section class="summary-grid">
+      <article class="summary-card highlight-card">
+        <span class="card-label">Jogador</span>
+        <h2>{{ usuarioAtual?.nome || usuarioLogado?.nome }}</h2>
+        <p>{{ usuarioAtual?.email || usuarioLogado?.email }}</p>
+      </article>
+
+      <article class="summary-card balance-card">
+        <span class="card-label">Saldo disponível</span>
+        <h2>R$ {{ formatarMoeda(usuarioAtual?.saldo) }}</h2>
+        <p>Mantenha saldo suficiente para registrar novas apostas.</p>
+      </article>
+
+      <article class="summary-card info-card">
+        <span class="card-label">Animais disponíveis</span>
+        <h2>{{ animais.length }}</h2>
+        <p>Os 25 grupos oficiais estão carregados para aposta.</p>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel-card">
+        <div class="panel-header">
+          <div>
+            <span class="card-label">Nova aposta</span>
+            <h3>Registrar aposta</h3>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="apostar()" class="bet-form">
+          <div class="form-group">
+            <label for="grupoAnimal">Grupo do animal</label>
+            <select id="grupoAnimal" formControlName="grupoAnimal">
+              <option [ngValue]="null">Selecione um grupo</option>
+              <option *ngFor="let animal of animais" [ngValue]="animal.grupo">
+                Grupo {{ animal.grupo }} - {{ animal.nome }}
+              </option>
+            </select>
+            <small *ngIf="grupoAnimal?.touched && grupoAnimal?.invalid">
+              Selecione um grupo válido.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="valor">Valor da aposta</label>
+            <input id="valor" type="number" min="1" step="0.01" formControlName="valor" placeholder="Ex.: 10" />
+            <small *ngIf="valor?.touched && valor?.invalid">
+              Informe um valor maior que zero.
+            </small>
+          </div>
+
+          <div class="selected-animal" *ngIf="grupoAnimal?.value as grupoSelecionado">
+            <span>Animal escolhido:</span>
+            <strong>{{ obterNomeAnimal(grupoSelecionado) }}</strong>
+          </div>
+
+          <div class="success-box" *ngIf="sucesso">
+            {{ sucesso }}
+          </div>
+
+          <div class="error-box" *ngIf="erro">
+            {{ erro }}
+          </div>
+
+          <button type="submit" [disabled]="carregandoAposta">
+            {{ carregandoAposta ? 'Registrando...' : 'Confirmar aposta' }}
+          </button>
+        </form>
+      </article>
+
+      <article class="panel-card" *ngIf="ultimaAposta">
+        <div class="panel-header">
+          <div>
+            <span class="card-label">Último resultado</span>
+            <h3>Resumo da aposta</h3>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-item">
+            <span>Grupo escolhido</span>
+            <strong>{{ ultimaAposta.numeroEscolhido }} - {{ ultimaAposta.animalEscolhido }}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Grupo sorteado</span>
+            <strong>{{ ultimaAposta.numeroSorteado }} - {{ ultimaAposta.animalSorteado }}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Valor apostado</span>
+            <strong>R$ {{ formatarMoeda(ultimaAposta.valorApostado) }}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Premiação</span>
+            <strong>R$ {{ formatarMoeda(ultimaAposta.valorGanho) }}</strong>
+          </div>
+        </div>
+
+        <div class="result-status" [class.win]="ultimaAposta.ganhou" [class.lose]="!ultimaAposta.ganhou">
+          {{ ultimaAposta.ganhou ? 'Você venceu esta rodada.' : 'Você não venceu esta rodada.' }}
+        </div>
+      </article>
+    </section>
+
+    <section class="panel-card animals-card">
+      <div class="panel-header">
+        <div>
+          <span class="card-label">Tabela de grupos</span>
+          <h3>Animais do jogo</h3>
+        </div>
+      </div>
+
+      <div class="animal-grid">
+        <div class="animal-chip" *ngFor="let animal of animais">
+          <strong>{{ animal.grupo }}</strong>
+          <span>{{ animal.nome }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-card history-card">
+      <div class="panel-header">
+        <div>
+          <span class="card-label">Histórico</span>
+          <h3>Últimas apostas</h3>
+        </div>
+      </div>
+
+      <div class="loading-inline" *ngIf="carregandoHistorico">Carregando histórico...</div>
+      <div class="error-box" *ngIf="erroHistorico">{{ erroHistorico }}</div>
+
+      <div class="history-table-wrapper" *ngIf="!carregandoHistorico && historico.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Animal</th>
+              <th>Valor</th>
+              <th>Resultado</th>
+              <th>Prêmio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of historico">
+              <td>{{ formatarData(item.dataHora) }}</td>
+              <td>Grupo {{ item.grupoAnimal }} - {{ item.nomeAnimal }}</td>
+              <td>R$ {{ formatarMoeda(item.valorApostado) }}</td>
+              <td>
+                <span class="status-pill" [class.status-win]="item.vencedora" [class.status-lose]="!item.vencedora">
+                  {{ item.vencedora ? 'Vitória' : 'Derrota' }}
+                </span>
+              </td>
+              <td>R$ {{ formatarMoeda(item.premio) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="!carregandoHistorico && historico.length === 0">
+        Nenhuma aposta registrada até o momento.
+      </div>
+    </section>
+  </ng-container>
 </div>

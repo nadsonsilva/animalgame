@@ -62,7 +62,7 @@ export class CadastroPage {
       },
       error: (error) => {
         this.loading = false;
-        this.erro = error?.error?.message || error?.error || 'Não foi possível realizar o cadastro.';
+        this.erro = error?.error?.message || error?.error?.erro || error?.error || 'Não foi possível realizar o cadastro.';
       }
     });
   }

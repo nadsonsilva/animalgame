@@ -13,12 +13,19 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './login.page.css'
 })
 export class LoginPage {
+
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   loading = false;
   erro = '';
+
+  constructor() {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -46,7 +53,7 @@ export class LoginPage {
       },
       error: (error) => {
         this.loading = false;
-        this.erro = error?.error?.message || error?.error || 'E-mail ou senha inválidos.';
+        this.erro = error?.error?.message || error?.error?.erro || error?.error || 'E-mail ou senha inválidos.';
       }
     });
   }

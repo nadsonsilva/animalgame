@@ -30,4 +30,9 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioResponseDTO>> listar() {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioResponseDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.buscarPorId(id));
+    }
 }

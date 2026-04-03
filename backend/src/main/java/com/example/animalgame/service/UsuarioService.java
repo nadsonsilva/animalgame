@@ -38,6 +38,14 @@ public class UsuarioService {
         return toResponseDTO(salvo);
     }
 
+
+    public UsuarioResponseDTO buscarPorId(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
+
+        return toResponseDTO(usuario);
+    }
+
     public List<UsuarioResponseDTO> listarTodos() {
         return usuarioRepository.findAll()
                 .stream()
