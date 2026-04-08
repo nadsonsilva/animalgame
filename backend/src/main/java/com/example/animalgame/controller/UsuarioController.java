@@ -5,6 +5,7 @@ import com.example.animalgame.dto.UsuarioResponseDTO;
 import com.example.animalgame.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.animalgame.dto.DepositoRequestDTO;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -20,6 +21,14 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+
+    @PostMapping("/{id}/depositar")
+    public ResponseEntity<UsuarioResponseDTO> depositar(
+            @PathVariable Long id,
+            @Valid @RequestBody DepositoRequestDTO request
+    ) {
+        return ResponseEntity.ok(usuarioService.depositar(id, request.getValor()));
+    }
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> cadastrar(@Valid @RequestBody UsuarioRequestDTO request) {
         UsuarioResponseDTO salvo = usuarioService.cadastrar(request);

@@ -41,6 +41,7 @@ export class DashboardPage implements OnInit {
   carregandoPagina = true;
   carregandoAposta = false;
   carregandoHistorico = false;
+  carregandoDeposito = false;
 
   erro = '';
   erroHistorico = '';
@@ -53,14 +54,14 @@ export class DashboardPage implements OnInit {
     valor: [null as number | null, [Validators.required, Validators.min(1)]]
   });
 
-  ngOnInit(): void {
-    console.log('DashboardPage.ngOnInit iniciado');
+  depositoForm = this.fb.group({
+    valorDeposito: [null as number | null, [Validators.required, Validators.min(1)]]
+  });
 
+  ngOnInit(): void {
     this.usuarioLogado = this.authService.getUsuarioLogado();
-    console.log('Usuário logado obtido do storage:', this.usuarioLogado);
 
     if (!this.usuarioLogado?.usuarioId) {
-      console.warn('Usuário sem usuarioId. Fazendo logout.');
       this.logout();
       return;
     }
@@ -71,16 +72,11 @@ export class DashboardPage implements OnInit {
   carregarDashboard(): void {
 
     if (!this.usuarioLogado?.usuarioId) {
-      console.warn('carregarDashboard chamado sem usuarioId. Fazendo logout.');
       this.logout();
       return;
     }
 
     const usuarioId = this.usuarioLogado.usuarioId;
-
-    console.log('Entrou em carregarDashboard');
-    console.log('usuarioId:', usuarioId);
-    console.log('pendencias antes de iniciar:', this.pendenciasCarregamento);
 
     this.carregandoPagina = true;
     this.carregandoHistorico = true;
@@ -89,9 +85,7 @@ export class DashboardPage implements OnInit {
     this.erroHistorico = '';
 
     this.pendenciasCarregamento = 3;
-    console.log('pendenciasCarregamento definido para:', this.pendenciasCarregamento);
 
-    // carregar usuário
     this.usuarioService.buscarPorId(usuarioId)
       .pipe(
         timeout(8000),
@@ -106,22 +100,18 @@ export class DashboardPage implements OnInit {
           return of(null as UsuarioResponse | null);
         }),
         finalize(() => {
-          console.log('Finalize usuário executado');
           this.finalizarCarregamento();
         })
       )
       .subscribe(usuario => {
-        console.log('Usuário carregado:', usuario);
         this.usuarioAtual = usuario;
         this.cdr.detectChanges();
       });
 
-    // carregar animais
     this.animalService.listarAnimais()
       .pipe(
         timeout(8000),
         catchError((error) => {
-
           console.error('Erro ao buscar animais:', error);
 
           this.erro = this.extrairMensagemErro(
@@ -132,25 +122,20 @@ export class DashboardPage implements OnInit {
           return of([] as Animal[]);
         }),
         finalize(() => {
-          console.log('Finalize animais executado');
           this.finalizarCarregamento();
         })
       )
       .subscribe(animais => {
-        console.log('Animais carregados:', animais);
-
         this.animais = [...animais]
           .sort((a, b) => a.grupo - b.grupo);
 
         this.cdr.detectChanges();
       });
 
-    // carregar histórico
     this.apostaService.listarHistorico(usuarioId)
       .pipe(
         timeout(8000),
         catchError((error) => {
-
           console.error('Erro ao buscar histórico:', error);
 
           this.erroHistorico = this.extrairMensagemErro(
@@ -161,45 +146,31 @@ export class DashboardPage implements OnInit {
           return of([] as ApostaHistorico[]);
         }),
         finalize(() => {
-
-          console.log('Finalize histórico executado');
           this.carregandoHistorico = false;
           this.finalizarCarregamento();
           this.cdr.detectChanges();
-
         })
       )
       .subscribe(historico => {
-        console.log('Histórico carregado:', historico);
-
         this.historico = historico;
         this.cdr.detectChanges();
-
       });
   }
 
   private finalizarCarregamento(): void {
-
     this.pendenciasCarregamento--;
-    console.log('finalizarCarregamento chamado');
-    console.log('Pendências restantes:', this.pendenciasCarregamento);
 
     if (this.pendenciasCarregamento <= 0) {
-
       this.carregandoPagina = false;
-      console.log('carregandoPagina = false');
       this.cdr.detectChanges();
-
     }
   }
 
   apostar(): void {
 
     if (this.form.invalid || !this.usuarioLogado?.usuarioId) {
-
       this.form.markAllAsTouched();
       return;
-
     }
 
     this.carregandoAposta = true;
@@ -209,27 +180,21 @@ export class DashboardPage implements OnInit {
     this.ultimaAposta = null;
 
     const payload = {
-
       usuarioId: this.usuarioLogado.usuarioId,
       grupoAnimal: Number(this.form.value.grupoAnimal),
       valor: Number(this.form.value.valor)
-
     };
 
     this.apostaService.registrarAposta(payload)
       .pipe(
         timeout(8000),
         finalize(() => {
-
           this.carregandoAposta = false;
           this.cdr.detectChanges();
-
         })
       )
       .subscribe({
-
         next: resposta => {
-
           this.ultimaAposta = resposta;
 
           this.sucesso = resposta.ganhou
@@ -243,11 +208,9 @@ export class DashboardPage implements OnInit {
 
           this.cdr.detectChanges();
           this.atualizarUsuarioEHistorico();
-
         },
 
         error: error => {
-
           console.error('Erro ao apostar:', error);
 
           this.erro = this.extrairMensagemErro(
@@ -256,7 +219,53 @@ export class DashboardPage implements OnInit {
           );
 
           this.cdr.detectChanges();
+        }
+      });
+  }
 
+  depositar(): void {
+
+    if (this.depositoForm.invalid || !this.usuarioLogado?.usuarioId) {
+      this.depositoForm.markAllAsTouched();
+      return;
+    }
+
+    const valor = Number(this.depositoForm.value.valorDeposito);
+
+    this.carregandoDeposito = true;
+    this.erro = '';
+    this.sucesso = '';
+
+    this.usuarioService.depositar(this.usuarioLogado.usuarioId, { valor })
+      .pipe(
+        timeout(8000),
+        finalize(() => {
+          this.carregandoDeposito = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: usuarioAtualizado => {
+          this.usuarioAtual = usuarioAtualizado;
+
+          this.sucesso = `Depósito de R$ ${this.formatarMoeda(valor)} realizado com sucesso.`;
+
+          this.depositoForm.reset({
+            valorDeposito: null
+          });
+
+          this.cdr.detectChanges();
+        },
+
+        error: error => {
+          console.error('Erro ao depositar:', error);
+
+          this.erro = this.extrairMensagemErro(
+            error,
+            'Não foi possível realizar o depósito.'
+          );
+
+          this.cdr.detectChanges();
         }
       });
   }
@@ -278,7 +287,6 @@ export class DashboardPage implements OnInit {
         catchError(() => of(null))
       )
       .subscribe(usuario => {
-
         if (usuario) {
           this.usuarioAtual = usuario;
         }
@@ -291,30 +299,22 @@ export class DashboardPage implements OnInit {
         timeout(8000),
         catchError(() => of([])),
         finalize(() => {
-
           this.carregandoHistorico = false;
           this.cdr.detectChanges();
-
         })
       )
       .subscribe(historico => {
-
         this.historico = historico;
         this.cdr.detectChanges();
-
       });
   }
 
   logout(): void {
-
     this.authService.logout();
-
     this.router.navigate(['/login']);
-
   }
 
   obterNomeAnimal(grupo: number | null | undefined): string {
-
     if (grupo == null) {
       return '-';
     }
@@ -324,7 +324,6 @@ export class DashboardPage implements OnInit {
   }
 
   formatarData(data: string | null | undefined): string {
-
     if (!data) {
       return '-';
     }
@@ -339,31 +338,46 @@ export class DashboardPage implements OnInit {
   }
 
   formatarMoeda(valor: number | null | undefined): string {
-
     return Number(valor ?? 0)
       .toFixed(2)
       .replace('.', ',');
-
   }
 
   private extrairMensagemErro(error: any, fallback: string): string {
+    const payload = error?.error;
 
-    return error?.error?.message
-      || error?.error?.erro
-      || error?.error
-      || fallback;
+    if (typeof payload === 'string') {
+      return payload;
+    }
 
+    if (payload?.message) {
+      return payload.message;
+    }
+
+    if (payload?.erro) {
+      return payload.erro;
+    }
+
+    if (payload?.error) {
+      return payload.error;
+    }
+
+    if (payload && typeof payload === 'object') {
+      return JSON.stringify(payload);
+    }
+
+    return fallback;
   }
 
   get grupoAnimal() {
-
     return this.form.get('grupoAnimal');
-
   }
 
   get valor() {
-
     return this.form.get('valor');
+  }
 
+  get valorDeposito() {
+    return this.depositoForm.get('valorDeposito');
   }
 }

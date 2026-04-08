@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { UsuarioResponse } from '../../shared/models/usuario-response.model';
+import { DepositoRequest } from '../../shared/models/deposito-request.model';
 
 @Injectable({
   providedIn: 'root'
@@ -17,5 +18,9 @@ export class UsuarioService {
 
   listarUsuarios(): Observable<UsuarioResponse[]> {
     return this.http.get<UsuarioResponse[]>(`${this.apiUrl}/usuarios`);
+  }
+
+  depositar(id: number, payload: DepositoRequest): Observable<UsuarioResponse> {
+    return this.http.post<UsuarioResponse>(`${this.apiUrl}/usuarios/${id}/depositar`, payload);
   }
 }

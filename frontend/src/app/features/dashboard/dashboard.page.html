@@ -9,7 +9,9 @@
     <button class="logout-button" type="button" (click)="logout()">Sair</button>
   </header>
 
-  <div class="loading-box" *ngIf="carregandoPagina && !usuarioAtual">Carregando informações do sistema...</div>
+  <div class="loading-box" *ngIf="carregandoPagina && !usuarioAtual">
+    Carregando informações do sistema...
+  </div>
 
   <div class="error-box" *ngIf="erro && !carregandoPagina">
     {{ erro }}
@@ -40,6 +42,36 @@
       <article class="panel-card">
         <div class="panel-header">
           <div>
+            <span class="card-label">Saldo</span>
+            <h3>Depositar saldo</h3>
+          </div>
+        </div>
+
+        <form [formGroup]="depositoForm" (ngSubmit)="depositar()" class="bet-form">
+          <div class="form-group">
+            <label for="valorDeposito">Valor do depósito</label>
+            <input
+              id="valorDeposito"
+              type="number"
+              min="1"
+              step="0.01"
+              formControlName="valorDeposito"
+              placeholder="Ex.: 100"
+            />
+            <small *ngIf="valorDeposito?.touched && valorDeposito?.invalid">
+              Informe um valor maior que zero.
+            </small>
+          </div>
+
+          <button type="submit" [disabled]="carregandoDeposito">
+            {{ carregandoDeposito ? 'Depositando...' : 'Depositar saldo' }}
+          </button>
+        </form>
+      </article>
+
+      <article class="panel-card">
+        <div class="panel-header">
+          <div>
             <span class="card-label">Nova aposta</span>
             <h3>Registrar aposta</h3>
           </div>
@@ -61,7 +93,14 @@
 
           <div class="form-group">
             <label for="valor">Valor da aposta</label>
-            <input id="valor" type="number" min="1" step="0.01" formControlName="valor" placeholder="Ex.: 10" />
+            <input
+              id="valor"
+              type="number"
+              min="1"
+              step="0.01"
+              formControlName="valor"
+              placeholder="Ex.: 10"
+            />
             <small *ngIf="valor?.touched && valor?.invalid">
               Informe um valor maior que zero.
             </small>

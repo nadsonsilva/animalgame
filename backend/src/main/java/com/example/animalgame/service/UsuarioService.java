@@ -38,7 +38,6 @@ public class UsuarioService {
         return toResponseDTO(salvo);
     }
 
-
     public UsuarioResponseDTO buscarPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
@@ -51,6 +50,22 @@ public class UsuarioService {
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public UsuarioResponseDTO depositar(Long id, Double valor) {
+
+        if (valor == null || valor <= 0) {
+            throw new RegraNegocioException("O valor do depósito deve ser maior que zero");
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
+
+        Double saldoAtual = usuario.getSaldo() != null ? usuario.getSaldo() : 0.0;
+        usuario.setSaldo(saldoAtual + valor);
+
+        Usuario atualizado = usuarioRepository.save(usuario);
+        return toResponseDTO(atualizado);
     }
 
     private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
