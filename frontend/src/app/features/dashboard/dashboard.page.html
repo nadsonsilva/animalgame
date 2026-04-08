@@ -9,7 +9,7 @@
     <button class="logout-button" type="button" (click)="logout()">Sair</button>
   </header>
 
-  <div class="loading-box" *ngIf="carregandoPagina">Carregando informações do sistema...</div>
+  <div class="loading-box" *ngIf="carregandoPagina && !usuarioAtual">Carregando informações do sistema...</div>
 
   <div class="error-box" *ngIf="erro && !carregandoPagina">
     {{ erro }}

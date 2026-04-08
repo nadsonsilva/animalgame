@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, finalize, of, timeout } from 'rxjs';
@@ -29,6 +29,7 @@ export class DashboardPage implements OnInit {
   private readonly usuarioService = inject(UsuarioService);
   private readonly animalService = inject(AnimalService);
   private readonly apostaService = inject(ApostaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   usuarioLogado: LoginResponse | null = null;
   usuarioAtual: UsuarioResponse | null = null;
@@ -53,10 +54,13 @@ export class DashboardPage implements OnInit {
   });
 
   ngOnInit(): void {
+    console.log('DashboardPage.ngOnInit iniciado');
 
     this.usuarioLogado = this.authService.getUsuarioLogado();
+    console.log('Usuário logado obtido do storage:', this.usuarioLogado);
 
     if (!this.usuarioLogado?.usuarioId) {
+      console.warn('Usuário sem usuarioId. Fazendo logout.');
       this.logout();
       return;
     }
@@ -67,11 +71,16 @@ export class DashboardPage implements OnInit {
   carregarDashboard(): void {
 
     if (!this.usuarioLogado?.usuarioId) {
+      console.warn('carregarDashboard chamado sem usuarioId. Fazendo logout.');
       this.logout();
       return;
     }
 
     const usuarioId = this.usuarioLogado.usuarioId;
+
+    console.log('Entrou em carregarDashboard');
+    console.log('usuarioId:', usuarioId);
+    console.log('pendencias antes de iniciar:', this.pendenciasCarregamento);
 
     this.carregandoPagina = true;
     this.carregandoHistorico = true;
@@ -80,6 +89,7 @@ export class DashboardPage implements OnInit {
     this.erroHistorico = '';
 
     this.pendenciasCarregamento = 3;
+    console.log('pendenciasCarregamento definido para:', this.pendenciasCarregamento);
 
     // carregar usuário
     this.usuarioService.buscarPorId(usuarioId)
@@ -95,10 +105,15 @@ export class DashboardPage implements OnInit {
 
           return of(null as UsuarioResponse | null);
         }),
-        finalize(() => this.finalizarCarregamento())
+        finalize(() => {
+          console.log('Finalize usuário executado');
+          this.finalizarCarregamento();
+        })
       )
       .subscribe(usuario => {
+        console.log('Usuário carregado:', usuario);
         this.usuarioAtual = usuario;
+        this.cdr.detectChanges();
       });
 
     // carregar animais
@@ -116,13 +131,18 @@ export class DashboardPage implements OnInit {
 
           return of([] as Animal[]);
         }),
-        finalize(() => this.finalizarCarregamento())
+        finalize(() => {
+          console.log('Finalize animais executado');
+          this.finalizarCarregamento();
+        })
       )
       .subscribe(animais => {
+        console.log('Animais carregados:', animais);
 
         this.animais = [...animais]
           .sort((a, b) => a.grupo - b.grupo);
 
+        this.cdr.detectChanges();
       });
 
     // carregar histórico
@@ -142,14 +162,18 @@ export class DashboardPage implements OnInit {
         }),
         finalize(() => {
 
+          console.log('Finalize histórico executado');
           this.carregandoHistorico = false;
           this.finalizarCarregamento();
+          this.cdr.detectChanges();
 
         })
       )
       .subscribe(historico => {
+        console.log('Histórico carregado:', historico);
 
         this.historico = historico;
+        this.cdr.detectChanges();
 
       });
   }
@@ -157,10 +181,14 @@ export class DashboardPage implements OnInit {
   private finalizarCarregamento(): void {
 
     this.pendenciasCarregamento--;
+    console.log('finalizarCarregamento chamado');
+    console.log('Pendências restantes:', this.pendenciasCarregamento);
 
     if (this.pendenciasCarregamento <= 0) {
 
       this.carregandoPagina = false;
+      console.log('carregandoPagina = false');
+      this.cdr.detectChanges();
 
     }
   }
@@ -194,6 +222,7 @@ export class DashboardPage implements OnInit {
         finalize(() => {
 
           this.carregandoAposta = false;
+          this.cdr.detectChanges();
 
         })
       )
@@ -212,6 +241,7 @@ export class DashboardPage implements OnInit {
             valor: null
           });
 
+          this.cdr.detectChanges();
           this.atualizarUsuarioEHistorico();
 
         },
@@ -224,6 +254,8 @@ export class DashboardPage implements OnInit {
             error,
             'Não foi possível registrar aposta.'
           );
+
+          this.cdr.detectChanges();
 
         }
       });
@@ -238,6 +270,7 @@ export class DashboardPage implements OnInit {
     const usuarioId = this.usuarioLogado.usuarioId;
 
     this.carregandoHistorico = true;
+    this.cdr.detectChanges();
 
     this.usuarioService.buscarPorId(usuarioId)
       .pipe(
@@ -247,10 +280,10 @@ export class DashboardPage implements OnInit {
       .subscribe(usuario => {
 
         if (usuario) {
-
           this.usuarioAtual = usuario;
-
         }
+
+        this.cdr.detectChanges();
       });
 
     this.apostaService.listarHistorico(usuarioId)
@@ -260,12 +293,14 @@ export class DashboardPage implements OnInit {
         finalize(() => {
 
           this.carregandoHistorico = false;
+          this.cdr.detectChanges();
 
         })
       )
       .subscribe(historico => {
 
         this.historico = historico;
+        this.cdr.detectChanges();
 
       });
   }
