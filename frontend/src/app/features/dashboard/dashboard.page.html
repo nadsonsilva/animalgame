@@ -66,6 +66,10 @@
           <button type="submit" [disabled]="carregandoDeposito">
             {{ carregandoDeposito ? 'Depositando...' : 'Depositar saldo' }}
           </button>
+
+          <div class="success-box" *ngIf="sucessoDeposito">
+            {{ sucessoDeposito }}
+          </div>
         </form>
       </article>
 
@@ -153,8 +157,8 @@
             <strong>{{ obterRotuloTipo(tipoApostaSelecionado()) }}</strong>
           </div>
 
-          <div class="success-box" *ngIf="sucesso">
-            {{ sucesso }}
+          <div class="success-box" *ngIf="sucessoAposta">
+            {{ sucessoAposta }}
           </div>
 
           <div class="error-box" *ngIf="erro">

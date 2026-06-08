@@ -45,7 +45,9 @@ export class DashboardPage implements OnInit {
 
   erro = '';
   erroHistorico = '';
-  sucesso = '';
+
+  sucessoDeposito = '';
+  sucessoAposta = '';
 
   private pendenciasCarregamento = 0;
 
@@ -94,6 +96,8 @@ export class DashboardPage implements OnInit {
 
     this.erro = '';
     this.erroHistorico = '';
+    this.sucessoDeposito = '';
+    this.sucessoAposta = '';
 
     this.pendenciasCarregamento = 3;
 
@@ -187,12 +191,13 @@ export class DashboardPage implements OnInit {
     this.carregandoAposta = true;
 
     this.erro = '';
-    this.sucesso = '';
+    this.sucessoAposta = '';
     this.ultimaAposta = null;
 
     const tipoAposta = this.form.value.tipoAposta || 'GRUPO';
 
     if (!this.validarCamposAposta(tipoAposta)) {
+      this.carregandoAposta = false;
       return;
     }
 
@@ -217,7 +222,7 @@ export class DashboardPage implements OnInit {
         next: resposta => {
           this.ultimaAposta = resposta;
 
-          this.sucesso = resposta.ganhou
+          this.sucessoAposta = resposta.ganhou
             ? `Parabéns! Você ganhou R$ ${this.formatarMoeda(resposta.valorGanho)}`
             : 'Aposta registrada com sucesso. Tente novamente na próxima rodada.';
 
@@ -228,6 +233,7 @@ export class DashboardPage implements OnInit {
             segundoNumero: null,
             valor: null
           });
+
           this.aplicarValidadoresPorTipo('GRUPO');
 
           this.cdr.detectChanges();
@@ -258,7 +264,7 @@ export class DashboardPage implements OnInit {
 
     this.carregandoDeposito = true;
     this.erro = '';
-    this.sucesso = '';
+    this.sucessoDeposito = '';
 
     this.usuarioService.depositar(this.usuarioLogado.usuarioId, { valor })
       .pipe(
@@ -272,7 +278,8 @@ export class DashboardPage implements OnInit {
         next: usuarioAtualizado => {
           this.usuarioAtual = usuarioAtualizado;
 
-          this.sucesso = `Depósito de R$ ${this.formatarMoeda(valor)} realizado com sucesso.`;
+          this.sucessoDeposito =
+            `Depósito de R$ ${this.formatarMoeda(valor)} realizado com sucesso.`;
 
           this.depositoForm.reset({
             valorDeposito: null
