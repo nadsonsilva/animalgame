@@ -29,6 +29,15 @@ public class Aposta {
     @Column(nullable = false)
     private Double premio;
 
+    @Column(nullable = false)
+    private String tipoAposta = "GRUPO";
+
+    private String numeroApostado;
+
+    private String segundoNumero;
+
+    private String numeroSorteado;
+
     public Aposta() {
     }
 
@@ -82,5 +91,37 @@ public class Aposta {
 
     public void setPremio(Double premio) {
         this.premio = premio;
+    }
+
+    public String getTipoAposta() {
+        return tipoAposta;
+    }
+
+    public void setTipoAposta(String tipoAposta) {
+        this.tipoAposta = tipoAposta;
+    }
+
+    public String getNumeroApostado() {
+        return numeroApostado;
+    }
+
+    public void setNumeroApostado(String numeroApostado) {
+        this.numeroApostado = numeroApostado;
+    }
+
+    public String getSegundoNumero() {
+        return segundoNumero;
+    }
+
+    public void setSegundoNumero(String segundoNumero) {
+        this.segundoNumero = segundoNumero;
+    }
+
+    public String getNumeroSorteado() {
+        return numeroSorteado;
+    }
+
+    public void setNumeroSorteado(String numeroSorteado) {
+        this.numeroSorteado = numeroSorteado;
     }
 }

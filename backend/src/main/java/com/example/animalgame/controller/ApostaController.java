@@ -26,7 +26,10 @@ public class ApostaController {
         ApostaResponseDTO resposta = apostaService.registrarApostaComResumo(
                 request.getUsuarioId(),
                 request.getGrupoAnimal(),
-                request.getValor()
+                request.getValor(),
+                request.getTipoAposta(),
+                request.getNumeroApostado(),
+                request.getSegundoNumero()
         );
         return ResponseEntity.ok(resposta);
     }

@@ -6,4 +6,10 @@ export interface ApostaResponse {
   ganhou: boolean;
   valorGanho: number;
   valorApostado: number;
+  tipoAposta?: string;
+  numeroApostado?: string | null;
+  segundoNumero?: string | null;
+  milharSorteada?: string | null;
+  premiosSorteados?: string[];
+  resultadoComparado?: string | null;
 }

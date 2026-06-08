@@ -79,6 +79,15 @@
 
         <form [formGroup]="form" (ngSubmit)="apostar()" class="bet-form">
           <div class="form-group">
+            <label for="tipoAposta">Tipo da aposta</label>
+            <select id="tipoAposta" formControlName="tipoAposta" (change)="alterarTipoAposta()">
+              <option *ngFor="let tipo of tiposAposta" [value]="tipo.valor">
+                {{ tipo.rotulo }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="tipoApostaSelecionado() === 'GRUPO'">
             <label for="grupoAnimal">Grupo do animal</label>
             <select id="grupoAnimal" formControlName="grupoAnimal">
               <option [ngValue]="null">Selecione um grupo</option>
@@ -88,6 +97,34 @@
             </select>
             <small *ngIf="grupoAnimal?.touched && grupoAnimal?.invalid">
               Selecione um grupo válido.
+            </small>
+          </div>
+
+          <div class="form-group" *ngIf="tipoApostaSelecionado() !== 'GRUPO'">
+            <label for="numeroApostado">{{ obterRotuloCampoNumero() }}</label>
+            <input
+              id="numeroApostado"
+              type="text"
+              inputmode="numeric"
+              formControlName="numeroApostado"
+              [placeholder]="obterPlaceholderNumero()"
+            />
+            <small *ngIf="numeroApostado?.touched && numeroApostado?.invalid">
+              Informe um número válido para o tipo selecionado.
+            </small>
+          </div>
+
+          <div class="form-group" *ngIf="tipoApostaSelecionado() === 'DUQUE_DE_DEZENA'">
+            <label for="segundoNumero">Segunda dezena</label>
+            <input
+              id="segundoNumero"
+              type="text"
+              inputmode="numeric"
+              formControlName="segundoNumero"
+              placeholder="Ex.: 12 ou 98"
+            />
+            <small *ngIf="segundoNumero?.touched && segundoNumero?.invalid">
+              Informe uma segunda dezena válida.
             </small>
           </div>
 
@@ -106,9 +143,14 @@
             </small>
           </div>
 
-          <div class="selected-animal" *ngIf="grupoAnimal?.value as grupoSelecionado">
+          <div class="selected-animal" *ngIf="tipoApostaSelecionado() === 'GRUPO' && grupoAnimal?.value as grupoSelecionado">
             <span>Animal escolhido:</span>
             <strong>{{ obterNomeAnimal(grupoSelecionado) }}</strong>
+          </div>
+
+          <div class="selected-animal" *ngIf="tipoApostaSelecionado() !== 'GRUPO'">
+            <span>Tipo selecionado:</span>
+            <strong>{{ obterRotuloTipo(tipoApostaSelecionado()) }}</strong>
           </div>
 
           <div class="success-box" *ngIf="sucesso">
@@ -135,13 +177,36 @@
 
         <div class="result-grid">
           <div class="result-item">
-            <span>Grupo escolhido</span>
-            <strong>{{ ultimaAposta.numeroEscolhido }} - {{ ultimaAposta.animalEscolhido }}</strong>
+            <span>Tipo de aposta</span>
+            <strong>{{ obterRotuloTipo(ultimaAposta.tipoAposta) }}</strong>
           </div>
 
           <div class="result-item">
-            <span>Grupo sorteado</span>
-            <strong>{{ ultimaAposta.numeroSorteado }} - {{ ultimaAposta.animalSorteado }}</strong>
+            <span>Aposta escolhida</span>
+            <strong *ngIf="ultimaAposta.tipoAposta === 'GRUPO' || !ultimaAposta.tipoAposta">
+              Grupo {{ ultimaAposta.numeroEscolhido }} - {{ ultimaAposta.animalEscolhido }}
+            </strong>
+            <strong *ngIf="ultimaAposta.tipoAposta === 'DUQUE_DE_DEZENA'">
+              {{ ultimaAposta.numeroApostado }} e {{ ultimaAposta.segundoNumero }}
+            </strong>
+            <strong *ngIf="ultimaAposta.tipoAposta && ultimaAposta.tipoAposta !== 'GRUPO' && ultimaAposta.tipoAposta !== 'DUQUE_DE_DEZENA'">
+              {{ ultimaAposta.numeroApostado }}
+            </strong>
+          </div>
+
+          <div class="result-item">
+            <span>1º prêmio</span>
+            <strong>{{ ultimaAposta.milharSorteada }} / Grupo {{ ultimaAposta.numeroSorteado }} - {{ ultimaAposta.animalSorteado }}</strong>
+          </div>
+
+          <div class="result-item" *ngIf="ultimaAposta.premiosSorteados?.length">
+            <span>5 prêmios sorteados</span>
+            <strong>{{ ultimaAposta.premiosSorteados?.join(', ') }}</strong>
+          </div>
+
+          <div class="result-item" *ngIf="ultimaAposta.resultadoComparado">
+            <span>Resultado comparado</span>
+            <strong>{{ ultimaAposta.resultadoComparado }}</strong>
           </div>
 
           <div class="result-item">
@@ -193,7 +258,7 @@
           <thead>
             <tr>
               <th>Data</th>
-              <th>Animal</th>
+              <th>Aposta</th>
               <th>Valor</th>
               <th>Resultado</th>
               <th>Prêmio</th>
@@ -202,7 +267,7 @@
           <tbody>
             <tr *ngFor="let item of historico">
               <td>{{ formatarData(item.dataHora) }}</td>
-              <td>Grupo {{ item.grupoAnimal }} - {{ item.nomeAnimal }}</td>
+              <td>{{ obterTextoAposta(item) }}</td>
               <td>R$ {{ formatarMoeda(item.valorApostado) }}</td>
               <td>
                 <span class="status-pill" [class.status-win]="item.vencedora" [class.status-lose]="!item.vencedora">

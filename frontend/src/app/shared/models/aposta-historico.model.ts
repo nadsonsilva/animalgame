@@ -8,4 +8,8 @@ export interface ApostaHistorico {
   dataHora: string;
   vencedora: boolean;
   premio: number;
+  tipoAposta?: string;
+  numeroApostado?: string | null;
+  segundoNumero?: string | null;
+  numeroSorteado?: string | null;
 }

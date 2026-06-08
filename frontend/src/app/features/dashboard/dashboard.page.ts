@@ -49,8 +49,19 @@ export class DashboardPage implements OnInit {
 
   private pendenciasCarregamento = 0;
 
+  tiposAposta = [
+    { valor: 'GRUPO', rotulo: 'Grupo' },
+    { valor: 'DEZENA', rotulo: 'Dezena' },
+    { valor: 'CENTENA', rotulo: 'Centena' },
+    { valor: 'MILHAR', rotulo: 'Milhar' },
+    { valor: 'DUQUE_DE_DEZENA', rotulo: 'Duque de dezena' }
+  ];
+
   form = this.fb.group({
+    tipoAposta: ['GRUPO', [Validators.required]],
     grupoAnimal: [null as number | null, [Validators.required]],
+    numeroApostado: [null as string | null],
+    segundoNumero: [null as string | null],
     valor: [null as number | null, [Validators.required, Validators.min(1)]]
   });
 
@@ -179,10 +190,19 @@ export class DashboardPage implements OnInit {
     this.sucesso = '';
     this.ultimaAposta = null;
 
+    const tipoAposta = this.form.value.tipoAposta || 'GRUPO';
+
+    if (!this.validarCamposAposta(tipoAposta)) {
+      return;
+    }
+
     const payload = {
       usuarioId: this.usuarioLogado.usuarioId,
-      grupoAnimal: Number(this.form.value.grupoAnimal),
-      valor: Number(this.form.value.valor)
+      grupoAnimal: tipoAposta === 'GRUPO' ? Number(this.form.value.grupoAnimal) : null,
+      valor: Number(this.form.value.valor),
+      tipoAposta,
+      numeroApostado: this.form.value.numeroApostado || null,
+      segundoNumero: tipoAposta === 'DUQUE_DE_DEZENA' ? this.form.value.segundoNumero || null : null
     };
 
     this.apostaService.registrarAposta(payload)
@@ -202,9 +222,13 @@ export class DashboardPage implements OnInit {
             : 'Aposta registrada com sucesso. Tente novamente na próxima rodada.';
 
           this.form.reset({
+            tipoAposta: 'GRUPO',
             grupoAnimal: null,
+            numeroApostado: null,
+            segundoNumero: null,
             valor: null
           });
+          this.aplicarValidadoresPorTipo('GRUPO');
 
           this.cdr.detectChanges();
           this.atualizarUsuarioEHistorico();
@@ -314,6 +338,116 @@ export class DashboardPage implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  alterarTipoAposta(): void {
+    const tipo = this.form.value.tipoAposta || 'GRUPO';
+    this.aplicarValidadoresPorTipo(tipo);
+  }
+
+  private aplicarValidadoresPorTipo(tipo: string): void {
+    const grupoAnimal = this.form.get('grupoAnimal');
+    const numeroApostado = this.form.get('numeroApostado');
+    const segundoNumero = this.form.get('segundoNumero');
+
+    grupoAnimal?.clearValidators();
+    numeroApostado?.clearValidators();
+    segundoNumero?.clearValidators();
+
+    if (tipo === 'GRUPO') {
+      grupoAnimal?.setValidators([Validators.required]);
+      numeroApostado?.setValue(null);
+      segundoNumero?.setValue(null);
+    } else if (tipo === 'DUQUE_DE_DEZENA') {
+      numeroApostado?.setValidators([Validators.required, Validators.pattern(/^\d{1,2}$/)]);
+      segundoNumero?.setValidators([Validators.required, Validators.pattern(/^\d{1,2}$/)]);
+      grupoAnimal?.setValue(null);
+    } else if (tipo === 'DEZENA') {
+      numeroApostado?.setValidators([Validators.required, Validators.pattern(/^\d{1,2}$/)]);
+      grupoAnimal?.setValue(null);
+      segundoNumero?.setValue(null);
+    } else if (tipo === 'CENTENA') {
+      numeroApostado?.setValidators([Validators.required, Validators.pattern(/^\d{1,3}$/)]);
+      grupoAnimal?.setValue(null);
+      segundoNumero?.setValue(null);
+    } else if (tipo === 'MILHAR') {
+      numeroApostado?.setValidators([Validators.required, Validators.pattern(/^\d{1,4}$/)]);
+      grupoAnimal?.setValue(null);
+      segundoNumero?.setValue(null);
+    }
+
+    grupoAnimal?.updateValueAndValidity();
+    numeroApostado?.updateValueAndValidity();
+    segundoNumero?.updateValueAndValidity();
+  }
+
+  private validarCamposAposta(tipo: string): boolean {
+    this.aplicarValidadoresPorTipo(tipo);
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return false;
+    }
+
+    return true;
+  }
+
+  tipoApostaSelecionado(): string {
+    return this.form.value.tipoAposta || 'GRUPO';
+  }
+
+  obterRotuloTipo(tipo: string | null | undefined): string {
+    return this.tiposAposta.find(item => item.valor === tipo)?.rotulo ?? 'Grupo';
+  }
+
+  obterRotuloCampoNumero(): string {
+    const tipo = this.tipoApostaSelecionado();
+
+    if (tipo === 'DEZENA' || tipo === 'DUQUE_DE_DEZENA') {
+      return 'Primeira dezena';
+    }
+
+    if (tipo === 'CENTENA') {
+      return 'Centena';
+    }
+
+    if (tipo === 'MILHAR') {
+      return 'Milhar';
+    }
+
+    return 'Número';
+  }
+
+  obterPlaceholderNumero(): string {
+    const tipo = this.tipoApostaSelecionado();
+
+    if (tipo === 'DEZENA' || tipo === 'DUQUE_DE_DEZENA') {
+      return 'Ex.: 07 ou 45';
+    }
+
+    if (tipo === 'CENTENA') {
+      return 'Ex.: 123';
+    }
+
+    if (tipo === 'MILHAR') {
+      return 'Ex.: 1234';
+    }
+
+    return '';
+  }
+
+  obterTextoAposta(item: ApostaHistorico): string {
+    const tipo = item.tipoAposta || 'GRUPO';
+
+    if (tipo === 'GRUPO') {
+      return `Grupo ${item.grupoAnimal} - ${item.nomeAnimal}`;
+    }
+
+    if (tipo === 'DUQUE_DE_DEZENA') {
+      return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado} e ${item.segundoNumero}`;
+    }
+
+    return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado}`;
+  }
+
   obterNomeAnimal(grupo: number | null | undefined): string {
     if (grupo == null) {
       return '-';
@@ -369,8 +503,20 @@ export class DashboardPage implements OnInit {
     return fallback;
   }
 
+  get tipoAposta() {
+    return this.form.get('tipoAposta');
+  }
+
   get grupoAnimal() {
     return this.form.get('grupoAnimal');
+  }
+
+  get numeroApostado() {
+    return this.form.get('numeroApostado');
+  }
+
+  get segundoNumero() {
+    return this.form.get('segundoNumero');
   }
 
   get valor() {
