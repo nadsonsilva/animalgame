@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,10 +58,24 @@ class ApostaServiceTest {
     @Test
     void deveRegistrarApostaComSucesso() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        when(sorteioService.sortearCincoMilhares())
+                .thenReturn(new String[]{"0001", "0005", "0009", "0013", "0017"});
+
+        when(sorteioService.obterGrupoPorMilhar("0001")).thenReturn(1);
+
         when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
-        when(sorteioService.sortearGrupo()).thenReturn(1);
-        when(sorteioService.calcularPremio(10.0)).thenReturn(20.0);
-        when(apostaRepository.save(any(Aposta.class))).thenReturn(new Aposta());
+
+        when(sorteioService.calcularPremio(anyDouble())).thenReturn(20.0);
+
+        Aposta apostaSalva = new Aposta();
+        apostaSalva.setUsuario(usuario);
+        apostaSalva.setAnimal(animal);
+        apostaSalva.setValor(10.0);
+        apostaSalva.setVencedora(true);
+        apostaSalva.setPremio(20.0);
+
+        when(apostaRepository.save(any(Aposta.class))).thenReturn(apostaSalva);
 
         ApostaResponseDTO resultado = apostaService.registrarApostaComResumo(1L, 1, 10.0);
 
@@ -73,7 +88,6 @@ class ApostaServiceTest {
         usuario.setSaldo(5.0);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
 
         assertThrows(RegraNegocioException.class, () -> {
             apostaService.registrarApostaComResumo(1L, 1, 10.0);
@@ -86,16 +100,29 @@ class ApostaServiceTest {
     void saldoNuncaDeveFicarNegativo() {
         usuario.setSaldo(10.0);
 
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
-
         Animal animalSorteado = new Animal();
         animalSorteado.setGrupo(2);
         animalSorteado.setNome("Águia");
 
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        when(sorteioService.sortearCincoMilhares())
+                .thenReturn(new String[]{"0005", "0009", "0013", "0017", "0021"});
+
+        when(sorteioService.obterGrupoPorMilhar("0005")).thenReturn(2);
+        when(sorteioService.obterGrupoPorMilhar("0005")).thenReturn(2);
+
+        when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
         when(animalRepository.findByGrupo(2)).thenReturn(Optional.of(animalSorteado));
-        when(sorteioService.sortearGrupo()).thenReturn(2);
-        when(apostaRepository.save(any(Aposta.class))).thenReturn(new Aposta());
+
+        Aposta apostaSalva = new Aposta();
+        apostaSalva.setUsuario(usuario);
+        apostaSalva.setAnimal(animal);
+        apostaSalva.setValor(10.0);
+        apostaSalva.setVencedora(false);
+        apostaSalva.setPremio(0.0);
+
+        when(apostaRepository.save(any(Aposta.class))).thenReturn(apostaSalva);
 
         apostaService.registrarApostaComResumo(1L, 1, 10.0);
 
