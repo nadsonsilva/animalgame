@@ -8,11 +8,13 @@ import { AnimalService } from '../../core/services/animal.service';
 import { ApostaService } from '../../core/services/aposta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { SorteioService } from '../../core/services/sorteio.service';
 import { Animal } from '../../shared/models/animal.model';
 import { ApostaHistorico } from '../../shared/models/aposta-historico.model';
 import { ApostaResponse } from '../../shared/models/aposta-response.model';
 import { LoginResponse } from '../../shared/models/login-response.model';
 import { UsuarioResponse } from '../../shared/models/usuario-response.model';
+import { SorteioResponse } from '../../shared/models/sorteio-response.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,6 +31,7 @@ export class DashboardPage implements OnInit {
   private readonly usuarioService = inject(UsuarioService);
   private readonly animalService = inject(AnimalService);
   private readonly apostaService = inject(ApostaService);
+  private readonly sorteioService = inject(SorteioService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   usuarioLogado: LoginResponse | null = null;
@@ -37,14 +40,17 @@ export class DashboardPage implements OnInit {
   animais: Animal[] = [];
   historico: ApostaHistorico[] = [];
   ultimaAposta: ApostaResponse | null = null;
+  sorteioSimulado: SorteioResponse | null = null;
 
   carregandoPagina = true;
   carregandoAposta = false;
   carregandoHistorico = false;
   carregandoDeposito = false;
+  carregandoSorteio = false;
 
   erro = '';
   erroHistorico = '';
+  erroSorteio = '';
 
   sucessoDeposito = '';
   sucessoAposta = '';
@@ -219,12 +225,9 @@ export class DashboardPage implements OnInit {
         })
       )
       .subscribe({
-        next: resposta => {
-          this.ultimaAposta = resposta;
-
-          this.sucessoAposta = resposta.ganhou
-            ? `Parabéns! Você ganhou R$ ${this.formatarMoeda(resposta.valorGanho)}`
-            : 'Aposta registrada com sucesso. Tente novamente na próxima rodada.';
+        next: () => {
+          this.ultimaAposta = null;
+          this.sucessoAposta = 'Aposta registrada com sucesso. Aguarde o sorteio para ver o resultado.';
 
           this.form.reset({
             tipoAposta: 'GRUPO',
@@ -294,6 +297,48 @@ export class DashboardPage implements OnInit {
           this.erro = this.extrairMensagemErro(
             error,
             'Não foi possível realizar o depósito.'
+          );
+
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+
+  simularSorteio(): void {
+    if (!this.usuarioLogado?.usuarioId) {
+      this.logout();
+      return;
+    }
+
+    this.carregandoSorteio = true;
+    this.erroSorteio = '';
+    this.sorteioSimulado = null;
+    this.ultimaAposta = null;
+
+    this.sorteioService.simularSorteio(this.usuarioLogado.usuarioId)
+      .pipe(
+        timeout(8000),
+        finalize(() => {
+          this.carregandoSorteio = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: resposta => {
+          this.sorteioSimulado = resposta;
+          this.ultimaAposta = resposta.apostasProcessadas?.[0] ?? null;
+          this.sucessoAposta = resposta.mensagem;
+
+          this.cdr.detectChanges();
+          this.atualizarUsuarioEHistorico();
+        },
+        error: error => {
+          console.error('Erro ao simular sorteio:', error);
+
+          this.erroSorteio = this.extrairMensagemErro(
+            error,
+            'Não foi possível simular o sorteio.'
           );
 
           this.cdr.detectChanges();
@@ -443,16 +488,33 @@ export class DashboardPage implements OnInit {
 
   obterTextoAposta(item: ApostaHistorico): string {
     const tipo = item.tipoAposta || 'GRUPO';
+    const status = item.status === 'PENDENTE' ? ' (pendente)' : '';
 
     if (tipo === 'GRUPO') {
-      return `Grupo ${item.grupoAnimal} - ${item.nomeAnimal}`;
+      return `Grupo ${item.grupoAnimal} - ${item.nomeAnimal}${status}`;
     }
 
     if (tipo === 'DUQUE_DE_DEZENA') {
-      return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado} e ${item.segundoNumero}`;
+      return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado} e ${item.segundoNumero}${status}`;
     }
 
-    return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado}`;
+    return `${this.obterRotuloTipo(tipo)}: ${item.numeroApostado}${status}`;
+  }
+
+
+  obterDezenasGrupo(grupo: number | null | undefined): string[] {
+    if (grupo == null || grupo < 1 || grupo > 25) {
+      return [];
+    }
+
+    if (grupo === 25) {
+      return ['97', '98', '99', '00'];
+    }
+
+    const inicio = ((grupo - 1) * 4) + 1;
+
+    return [0, 1, 2, 3]
+      .map(valor => String(inicio + valor).padStart(2, '0'));
   }
 
   obterNomeAnimal(grupo: number | null | undefined): string {

@@ -2,6 +2,7 @@ package com.example.animalgame.service;
 
 import com.example.animalgame.dto.ApostaHistoricoResponseDTO;
 import com.example.animalgame.dto.ApostaResponseDTO;
+import com.example.animalgame.dto.SorteioResponseDTO;
 import com.example.animalgame.exception.RegraNegocioException;
 import com.example.animalgame.model.Animal;
 import com.example.animalgame.model.Aposta;
@@ -28,6 +29,9 @@ public class ApostaService {
     private static final String TIPO_MILHAR = "MILHAR";
     private static final String TIPO_DUQUE_DEZENA = "DUQUE_DE_DEZENA";
 
+    private static final String STATUS_PENDENTE = "PENDENTE";
+    private static final String STATUS_FINALIZADA = "FINALIZADA";
+
     private final ApostaRepository apostaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AnimalRepository animalRepository;
@@ -47,21 +51,59 @@ public class ApostaService {
 
     @Transactional
     public Aposta registrarAposta(Long usuarioId, Integer grupoAnimal, Double valor) {
-        return processarAposta(usuarioId, grupoAnimal, valor, TIPO_GRUPO, null, null).apostaSalva;
+        return registrarApostaPendente(usuarioId, grupoAnimal, valor, TIPO_GRUPO, null, null);
     }
 
     @Transactional
     public ApostaResponseDTO registrarApostaComResumo(Long usuarioId, Integer grupoAnimal, Double valor) {
-        ResultadoAposta resultado = processarAposta(usuarioId, grupoAnimal, valor, TIPO_GRUPO, null, null);
-        return toResponseDTO(resultado);
+        Aposta aposta = registrarApostaPendente(usuarioId, grupoAnimal, valor, TIPO_GRUPO, null, null);
+        return toResponseDTO(aposta, null, null, null, null, "Aposta registrada. Aguarde o sorteio.");
     }
 
     @Transactional
     public ApostaResponseDTO registrarApostaComResumo(Long usuarioId, Integer grupoAnimal, Double valor,
                                                        String tipoAposta, String numeroApostado,
                                                        String segundoNumero) {
-        ResultadoAposta resultado = processarAposta(usuarioId, grupoAnimal, valor, tipoAposta, numeroApostado, segundoNumero);
-        return toResponseDTO(resultado);
+        Aposta aposta = registrarApostaPendente(usuarioId, grupoAnimal, valor, tipoAposta, numeroApostado, segundoNumero);
+        return toResponseDTO(aposta, null, null, null, null, "Aposta registrada. Aguarde o sorteio.");
+    }
+
+    @Transactional
+    public SorteioResponseDTO simularSorteioParaUsuario(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
+
+        String[] premiosSorteados = sorteioService.sortearCincoMilhares();
+        List<String> premios = Arrays.asList(premiosSorteados);
+
+        List<String> dezenas = premios.stream()
+                .map(sorteioService::obterDezena)
+                .collect(Collectors.toList());
+
+        List<Integer> grupos = premios.stream()
+                .map(sorteioService::obterGrupoPorMilhar)
+                .collect(Collectors.toList());
+
+        List<Aposta> apostasPendentes = apostaRepository
+                .findByUsuarioAndStatusOrderByDataHoraAsc(usuario, STATUS_PENDENTE);
+
+        List<ApostaResponseDTO> apostasProcessadas = apostasPendentes.stream()
+                .map(aposta -> processarResultadoDaAposta(aposta, premiosSorteados))
+                .collect(Collectors.toList());
+
+        Integer grupoSorteado = grupos.isEmpty() ? null : grupos.get(0);
+        String mensagem = apostasProcessadas.isEmpty()
+                ? "Sorteio realizado com sucesso. Nenhuma aposta pendente para este usuário."
+                : "Sorteio realizado com sucesso. Apostas pendentes processadas.";
+
+        return new SorteioResponseDTO(
+                grupoSorteado,
+                mensagem,
+                premios,
+                dezenas,
+                grupos,
+                apostasProcessadas
+        );
     }
 
     public List<ApostaHistoricoResponseDTO> listarHistorico(Long usuarioId) {
@@ -84,9 +126,9 @@ public class ApostaService {
                 .collect(Collectors.toList());
     }
 
-    private ResultadoAposta processarAposta(Long usuarioId, Integer grupoAnimal, Double valor,
-                                            String tipoAposta, String numeroApostado,
-                                            String segundoNumero) {
+    private Aposta registrarApostaPendente(Long usuarioId, Integer grupoAnimal, Double valor,
+                                           String tipoAposta, String numeroApostado,
+                                           String segundoNumero) {
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado"));
@@ -100,31 +142,12 @@ public class ApostaService {
 
         String numeroFormatado = formatarNumeroPrincipal(tipo, numeroApostado);
         String segundoNumeroFormatado = formatarSegundoNumero(tipo, segundoNumero);
-
-        String[] premiosSorteados = sorteioService.sortearCincoMilhares();
-        if (premiosSorteados == null || premiosSorteados.length == 0 || premiosSorteados[0] == null) {
-            int grupoGerado = sorteioService.sortearGrupo();
-            premiosSorteados = new String[] { gerarMilharPorGrupo(grupoGerado), "0000", "0000", "0000", "0000" };
-        }
-        String primeiroPremio = premiosSorteados[0];
-        int grupoSorteado = sorteioService.obterGrupoPorMilhar(primeiroPremio);
-
-        Animal animalSorteado = animalRepository.findByGrupo(grupoSorteado)
-                .orElseThrow(() -> new RegraNegocioException("Animal sorteado não encontrado"));
-
         Animal animalEscolhido = obterAnimalEscolhido(tipo, grupoAnimal, numeroFormatado);
-
-        boolean venceu = verificarResultado(tipo, animalEscolhido.getGrupo(), numeroFormatado, segundoNumeroFormatado, premiosSorteados);
-        double premio = venceu ? sorteioService.calcularPremio(valor) : 0.0;
 
         usuario.setSaldo(usuario.getSaldo() - valor);
 
         if (usuario.getSaldo() < 0) {
             throw new RegraNegocioException("Saldo não pode ficar negativo");
-        }
-
-        if (venceu) {
-            usuario.setSaldo(usuario.getSaldo() + premio);
         }
 
         usuarioRepository.save(usuario);
@@ -134,47 +157,75 @@ public class ApostaService {
         aposta.setAnimal(animalEscolhido);
         aposta.setValor(valor);
         aposta.setDataHora(LocalDateTime.now());
-        aposta.setVencedora(venceu);
-        aposta.setPremio(premio);
+        aposta.setVencedora(false);
+        aposta.setPremio(0.0);
         aposta.setTipoAposta(tipo);
+        aposta.setStatus(STATUS_PENDENTE);
         aposta.setNumeroApostado(numeroFormatado);
         aposta.setSegundoNumero(segundoNumeroFormatado);
+        aposta.setNumeroSorteado(null);
+
+        return apostaRepository.save(aposta);
+    }
+
+    private ApostaResponseDTO processarResultadoDaAposta(Aposta aposta, String[] premiosSorteados) {
+        String primeiroPremio = premiosSorteados[0];
+        int grupoSorteado = sorteioService.obterGrupoPorMilhar(primeiroPremio);
+
+        Animal animalSorteado = animalRepository.findByGrupo(grupoSorteado)
+                .orElseThrow(() -> new RegraNegocioException("Animal sorteado não encontrado"));
+
+        boolean venceu = verificarResultado(
+                aposta.getTipoAposta(),
+                aposta.getAnimal().getGrupo(),
+                aposta.getNumeroApostado(),
+                aposta.getSegundoNumero(),
+                premiosSorteados
+        );
+
+        double premio = venceu ? sorteioService.calcularPremio(aposta.getValor()) : 0.0;
+
+        aposta.setVencedora(venceu);
+        aposta.setPremio(premio);
+        aposta.setStatus(STATUS_FINALIZADA);
         aposta.setNumeroSorteado(String.join(", ", premiosSorteados));
+
+        if (venceu) {
+            Usuario usuario = aposta.getUsuario();
+            usuario.setSaldo(usuario.getSaldo() + premio);
+            usuarioRepository.save(usuario);
+        }
 
         Aposta apostaSalva = apostaRepository.save(aposta);
 
-        return new ResultadoAposta(
+        return toResponseDTO(
                 apostaSalva,
-                animalEscolhido,
                 grupoSorteado,
                 animalSorteado,
-                venceu,
-                premio,
-                valor,
-                tipo,
-                numeroFormatado,
-                segundoNumeroFormatado,
                 primeiroPremio,
                 Arrays.asList(premiosSorteados),
-                montarResultadoComparado(tipo, premiosSorteados)
+                montarResultadoComparado(aposta.getTipoAposta(), premiosSorteados)
         );
     }
 
-    private ApostaResponseDTO toResponseDTO(ResultadoAposta resultado) {
+    private ApostaResponseDTO toResponseDTO(Aposta aposta, Integer grupoSorteado, Animal animalSorteado,
+                                            String milharSorteada, List<String> premiosSorteados,
+                                            String resultadoComparado) {
         return new ApostaResponseDTO(
-                resultado.animalEscolhido.getGrupo(),
-                resultado.animalEscolhido.getNome(),
-                resultado.grupoSorteado,
-                resultado.animalSorteado.getNome(),
-                resultado.venceu,
-                resultado.premio,
-                resultado.valorApostado,
-                resultado.tipoAposta,
-                resultado.numeroApostado,
-                resultado.segundoNumero,
-                resultado.milharSorteada,
-                resultado.premiosSorteados,
-                resultado.resultadoComparado
+                aposta.getAnimal().getGrupo(),
+                aposta.getAnimal().getNome(),
+                grupoSorteado,
+                animalSorteado != null ? animalSorteado.getNome() : null,
+                Boolean.TRUE.equals(aposta.getVencedora()),
+                aposta.getPremio(),
+                aposta.getValor(),
+                aposta.getTipoAposta(),
+                aposta.getNumeroApostado(),
+                aposta.getSegundoNumero(),
+                milharSorteada,
+                premiosSorteados,
+                resultadoComparado,
+                aposta.getStatus()
         );
     }
 
@@ -193,7 +244,8 @@ public class ApostaService {
                 aposta.getTipoAposta(),
                 aposta.getNumeroApostado(),
                 aposta.getSegundoNumero(),
-                aposta.getNumeroSorteado()
+                aposta.getNumeroSorteado(),
+                aposta.getStatus()
         );
     }
 
@@ -291,7 +343,8 @@ public class ApostaService {
             String dezena = numeroFormatado.length() >= 2
                     ? numeroFormatado.substring(numeroFormatado.length() - 2)
                     : numeroFormatado;
-            grupo = sorteioService.obterGrupoPorMilhar(String.format("%04d", Integer.parseInt(dezena)));
+            int dezenaInt = Integer.parseInt(dezena);
+            grupo = dezenaInt == 0 ? 25 : ((dezenaInt - 1) / 4) + 1;
         }
 
         return animalRepository.findByGrupo(grupo)
@@ -325,11 +378,6 @@ public class ApostaService {
         return dezenasSorteadas.contains(numeroApostado) && dezenasSorteadas.contains(segundoNumero);
     }
 
-    private String gerarMilharPorGrupo(int grupo) {
-        int dezena = grupo == 25 ? 97 : ((grupo - 1) * 4) + 1;
-        return String.format("00%02d", dezena);
-    }
-
     private String montarResultadoComparado(String tipo, String[] premiosSorteados) {
         String primeiroPremio = premiosSorteados[0];
 
@@ -352,52 +400,5 @@ public class ApostaService {
         return Arrays.stream(premiosSorteados)
                 .map(sorteioService::obterDezena)
                 .collect(Collectors.joining(", "));
-    }
-
-    private static class ResultadoAposta {
-
-        private final Aposta apostaSalva;
-        private final Animal animalEscolhido;
-        private final Integer grupoSorteado;
-        private final Animal animalSorteado;
-        private final Boolean venceu;
-        private final Double premio;
-        private final Double valorApostado;
-        private final String tipoAposta;
-        private final String numeroApostado;
-        private final String segundoNumero;
-        private final String milharSorteada;
-        private final List<String> premiosSorteados;
-        private final String resultadoComparado;
-
-        public ResultadoAposta(
-                Aposta apostaSalva,
-                Animal animalEscolhido,
-                Integer grupoSorteado,
-                Animal animalSorteado,
-                Boolean venceu,
-                Double premio,
-                Double valorApostado,
-                String tipoAposta,
-                String numeroApostado,
-                String segundoNumero,
-                String milharSorteada,
-                List<String> premiosSorteados,
-                String resultadoComparado) {
-
-            this.apostaSalva = apostaSalva;
-            this.animalEscolhido = animalEscolhido;
-            this.grupoSorteado = grupoSorteado;
-            this.animalSorteado = animalSorteado;
-            this.venceu = venceu;
-            this.premio = premio;
-            this.valorApostado = valorApostado;
-            this.tipoAposta = tipoAposta;
-            this.numeroApostado = numeroApostado;
-            this.segundoNumero = segundoNumero;
-            this.milharSorteada = milharSorteada;
-            this.premiosSorteados = premiosSorteados;
-            this.resultadoComparado = resultadoComparado;
-        }
     }
 }

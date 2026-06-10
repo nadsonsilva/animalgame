@@ -32,6 +32,9 @@ public class Aposta {
     @Column(nullable = false)
     private String tipoAposta = "GRUPO";
 
+    @Column(nullable = false)
+    private String status = "PENDENTE";
+
     private String numeroApostado;
 
     private String segundoNumero;
@@ -99,6 +102,14 @@ public class Aposta {
 
     public void setTipoAposta(String tipoAposta) {
         this.tipoAposta = tipoAposta;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getNumeroApostado() {

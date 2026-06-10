@@ -12,4 +12,5 @@ export interface ApostaHistorico {
   numeroApostado?: string | null;
   segundoNumero?: string | null;
   numeroSorteado?: string | null;
+  status?: string | null;
 }

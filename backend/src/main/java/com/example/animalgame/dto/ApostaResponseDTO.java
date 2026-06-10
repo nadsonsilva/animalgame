@@ -20,6 +20,7 @@ public class ApostaResponseDTO {
     private String milharSorteada;
     private List<String> premiosSorteados;
     private String resultadoComparado;
+    private String status;
 
     public ApostaResponseDTO(Integer numeroEscolhido, String animalEscolhido,
                              Integer numeroSorteado, String animalSorteado,
@@ -48,6 +49,17 @@ public class ApostaResponseDTO {
         this.resultadoComparado = resultadoComparado;
     }
 
+    public ApostaResponseDTO(Integer numeroEscolhido, String animalEscolhido,
+                             Integer numeroSorteado, String animalSorteado,
+                             boolean ganhou, Double valorGanho, Double valorApostado,
+                             String tipoAposta, String numeroApostado, String segundoNumero,
+                             String milharSorteada, List<String> premiosSorteados,
+                             String resultadoComparado, String status) {
+        this(numeroEscolhido, animalEscolhido, numeroSorteado, animalSorteado, ganhou, valorGanho, valorApostado,
+                tipoAposta, numeroApostado, segundoNumero, milharSorteada, premiosSorteados, resultadoComparado);
+        this.status = status;
+    }
+
     public Integer getNumeroEscolhido() { return numeroEscolhido; }
     public void setNumeroEscolhido(Integer numeroEscolhido) { this.numeroEscolhido = numeroEscolhido; }
     public String getAnimalEscolhido() { return animalEscolhido; }
@@ -74,4 +86,6 @@ public class ApostaResponseDTO {
     public void setPremiosSorteados(List<String> premiosSorteados) { this.premiosSorteados = premiosSorteados; }
     public String getResultadoComparado() { return resultadoComparado; }
     public void setResultadoComparado(String resultadoComparado) { this.resultadoComparado = resultadoComparado; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

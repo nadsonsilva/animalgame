@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ApostaRepository extends JpaRepository<Aposta, Long> {
     List<Aposta> findByUsuarioOrderByDataHoraDesc(Usuario usuario);
+    List<Aposta> findByUsuarioAndStatusOrderByDataHoraAsc(Usuario usuario, String status);
 }

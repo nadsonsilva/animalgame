@@ -17,6 +17,7 @@ public class ApostaHistoricoResponseDTO {
     private String numeroApostado;
     private String segundoNumero;
     private String numeroSorteado;
+    private String status;
 
     public ApostaHistoricoResponseDTO() {
     }
@@ -49,6 +50,17 @@ public class ApostaHistoricoResponseDTO {
         this.numeroSorteado = numeroSorteado;
     }
 
+    public ApostaHistoricoResponseDTO(Long id, Long usuarioId, String nomeUsuario,
+                                      Integer grupoAnimal, String nomeAnimal,
+                                      Double valorApostado, LocalDateTime dataHora,
+                                      Boolean vencedora, Double premio, String tipoAposta,
+                                      String numeroApostado, String segundoNumero,
+                                      String numeroSorteado, String status) {
+        this(id, usuarioId, nomeUsuario, grupoAnimal, nomeAnimal, valorApostado, dataHora, vencedora, premio,
+                tipoAposta, numeroApostado, segundoNumero, numeroSorteado);
+        this.status = status;
+    }
+
     public Long getId() { return id; }
     public Long getUsuarioId() { return usuarioId; }
     public String getNomeUsuario() { return nomeUsuario; }
@@ -62,6 +74,7 @@ public class ApostaHistoricoResponseDTO {
     public String getNumeroApostado() { return numeroApostado; }
     public String getSegundoNumero() { return segundoNumero; }
     public String getNumeroSorteado() { return numeroSorteado; }
+    public String getStatus() { return status; }
     public void setId(Long id) { this.id = id; }
     public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
     public void setNomeUsuario(String nomeUsuario) { this.nomeUsuario = nomeUsuario; }
@@ -75,4 +88,5 @@ public class ApostaHistoricoResponseDTO {
     public void setNumeroApostado(String numeroApostado) { this.numeroApostado = numeroApostado; }
     public void setSegundoNumero(String segundoNumero) { this.segundoNumero = segundoNumero; }
     public void setNumeroSorteado(String numeroSorteado) { this.numeroSorteado = numeroSorteado; }
+    public void setStatus(String status) { this.status = status; }
 }

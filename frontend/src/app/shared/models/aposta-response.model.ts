@@ -12,4 +12,5 @@ export interface ApostaResponse {
   milharSorteada?: string | null;
   premiosSorteados?: string[];
   resultadoComparado?: string | null;
+  status?: string | null;
 }

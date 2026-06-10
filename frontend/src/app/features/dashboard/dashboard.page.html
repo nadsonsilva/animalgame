@@ -171,6 +171,34 @@
         </form>
       </article>
 
+      <article class="panel-card sorteio-card">
+        <div class="panel-header">
+          <div>
+            <span class="card-label">Motor de sorteio</span>
+            <h3>Simular sorteio</h3>
+            <p>Gera 5 prêmios e processa as apostas pendentes do usuário logado.</p>
+          </div>
+        </div>
+
+        <button class="secondary-button" type="button" (click)="simularSorteio()" [disabled]="carregandoSorteio">
+          {{ carregandoSorteio ? 'Sorteando...' : 'Simular sorteio' }}
+        </button>
+
+        <div class="error-box" *ngIf="erroSorteio">
+          {{ erroSorteio }}
+        </div>
+
+        <div class="sorteio-grid" *ngIf="sorteioSimulado?.premios?.length">
+          <div class="sorteio-prize" *ngFor="let premio of sorteioSimulado?.premios; let i = index">
+            <span>{{ i + 1 }}º prêmio</span>
+            <strong>{{ premio }}</strong>
+            <small>
+              Dezena {{ sorteioSimulado?.dezenas?.[i] }} / Grupo {{ sorteioSimulado?.grupos?.[i] }}
+            </small>
+          </div>
+        </div>
+      </article>
+
       <article class="panel-card" *ngIf="ultimaAposta">
         <div class="panel-header">
           <div>
@@ -240,8 +268,9 @@
 
       <div class="animal-grid">
         <div class="animal-chip" *ngFor="let animal of animais">
-          <strong>{{ animal.grupo }}</strong>
+          <strong>Grupo {{ animal.grupo }}</strong>
           <span>{{ animal.nome }}</span>
+          <small>Dezenas: {{ obterDezenasGrupo(animal.grupo).join(', ') }}</small>
         </div>
       </div>
     </section>
@@ -274,8 +303,12 @@
               <td>{{ obterTextoAposta(item) }}</td>
               <td>R$ {{ formatarMoeda(item.valorApostado) }}</td>
               <td>
-                <span class="status-pill" [class.status-win]="item.vencedora" [class.status-lose]="!item.vencedora">
-                  {{ item.vencedora ? 'Vitória' : 'Derrota' }}
+                <span
+                  class="status-pill"
+                  [class.status-win]="item.vencedora && item.status !== 'PENDENTE'"
+                  [class.status-lose]="!item.vencedora && item.status !== 'PENDENTE'"
+                >
+                  {{ item.status === 'PENDENTE' ? 'Pendente' : (item.vencedora ? 'Vitória' : 'Derrota') }}
                 </span>
               </td>
               <td>R$ {{ formatarMoeda(item.premio) }}</td>
