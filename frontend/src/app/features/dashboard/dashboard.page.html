@@ -199,61 +199,60 @@
         </div>
       </article>
 
-      <article class="panel-card" *ngIf="ultimaAposta">
+      <article class="panel-card" *ngIf="resultadosSorteio.length > 0">
         <div class="panel-header">
           <div>
-            <span class="card-label">Último resultado</span>
-            <h3>Resumo da aposta</h3>
+            <span class="card-label">Resultados do sorteio</span>
+            <h3>Apostas processadas</h3>
+            <p>{{ resultadosSorteio.length }} aposta(s) pendente(s) processada(s) neste sorteio.</p>
           </div>
         </div>
 
-        <div class="result-grid">
-          <div class="result-item">
-            <span>Tipo de aposta</span>
-            <strong>{{ obterRotuloTipo(ultimaAposta.tipoAposta) }}</strong>
-          </div>
+        <div class="processed-results-list">
+          <div class="processed-result-card" *ngFor="let aposta of resultadosSorteio; let i = index">
+            <div class="processed-result-header">
+              <div>
+                <span>{{ i + 1 }}ª aposta</span>
+                <strong>{{ obterRotuloTipo(aposta.tipoAposta) }}</strong>
+              </div>
 
-          <div class="result-item">
-            <span>Aposta escolhida</span>
-            <strong *ngIf="ultimaAposta.tipoAposta === 'GRUPO' || !ultimaAposta.tipoAposta">
-              Grupo {{ ultimaAposta.numeroEscolhido }} - {{ ultimaAposta.animalEscolhido }}
-            </strong>
-            <strong *ngIf="ultimaAposta.tipoAposta === 'DUQUE_DE_DEZENA'">
-              {{ ultimaAposta.numeroApostado }} e {{ ultimaAposta.segundoNumero }}
-            </strong>
-            <strong *ngIf="ultimaAposta.tipoAposta && ultimaAposta.tipoAposta !== 'GRUPO' && ultimaAposta.tipoAposta !== 'DUQUE_DE_DEZENA'">
-              {{ ultimaAposta.numeroApostado }}
-            </strong>
-          </div>
+              <span class="status-pill" [class.status-win]="aposta.ganhou" [class.status-lose]="!aposta.ganhou">
+                {{ aposta.ganhou ? 'Vitória' : 'Derrota' }}
+              </span>
+            </div>
 
-          <div class="result-item">
-            <span>1º prêmio</span>
-            <strong>{{ ultimaAposta.milharSorteada }} / Grupo {{ ultimaAposta.numeroSorteado }} - {{ ultimaAposta.animalSorteado }}</strong>
-          </div>
+            <div class="result-grid compact-result-grid">
+              <div class="result-item">
+                <span>Aposta escolhida</span>
+                <strong>{{ obterTextoResultadoAposta(aposta) }}</strong>
+              </div>
 
-          <div class="result-item" *ngIf="ultimaAposta.premiosSorteados?.length">
-            <span>5 prêmios sorteados</span>
-            <strong>{{ ultimaAposta.premiosSorteados?.join(', ') }}</strong>
-          </div>
+              <div class="result-item">
+                <span>1º prêmio</span>
+                <strong>{{ aposta.milharSorteada }} / Grupo {{ aposta.numeroSorteado }} - {{ aposta.animalSorteado }}</strong>
+              </div>
 
-          <div class="result-item" *ngIf="ultimaAposta.resultadoComparado">
-            <span>Resultado comparado</span>
-            <strong>{{ ultimaAposta.resultadoComparado }}</strong>
-          </div>
+              <div class="result-item" *ngIf="aposta.premiosSorteados?.length">
+                <span>5 prêmios sorteados</span>
+                <strong>{{ aposta.premiosSorteados?.join(', ') }}</strong>
+              </div>
 
-          <div class="result-item">
-            <span>Valor apostado</span>
-            <strong>R$ {{ formatarMoeda(ultimaAposta.valorApostado) }}</strong>
-          </div>
+              <div class="result-item" *ngIf="aposta.resultadoComparado">
+                <span>Resultado comparado</span>
+                <strong>{{ aposta.resultadoComparado }}</strong>
+              </div>
 
-          <div class="result-item">
-            <span>Premiação</span>
-            <strong>R$ {{ formatarMoeda(ultimaAposta.valorGanho) }}</strong>
-          </div>
-        </div>
+              <div class="result-item">
+                <span>Valor apostado</span>
+                <strong>R$ {{ formatarMoeda(aposta.valorApostado) }}</strong>
+              </div>
 
-        <div class="result-status" [class.win]="ultimaAposta.ganhou" [class.lose]="!ultimaAposta.ganhou">
-          {{ ultimaAposta.ganhou ? 'Você venceu esta rodada.' : 'Você não venceu esta rodada.' }}
+              <div class="result-item">
+                <span>Premiação</span>
+                <strong>R$ {{ formatarMoeda(aposta.valorGanho) }}</strong>
+              </div>
+            </div>
+          </div>
         </div>
       </article>
     </section>

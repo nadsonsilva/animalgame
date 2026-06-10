@@ -40,6 +40,7 @@ export class DashboardPage implements OnInit {
   animais: Animal[] = [];
   historico: ApostaHistorico[] = [];
   ultimaAposta: ApostaResponse | null = null;
+  resultadosSorteio: ApostaResponse[] = [];
   sorteioSimulado: SorteioResponse | null = null;
 
   carregandoPagina = true;
@@ -199,6 +200,7 @@ export class DashboardPage implements OnInit {
     this.erro = '';
     this.sucessoAposta = '';
     this.ultimaAposta = null;
+    this.resultadosSorteio = [];
 
     const tipoAposta = this.form.value.tipoAposta || 'GRUPO';
 
@@ -315,6 +317,7 @@ export class DashboardPage implements OnInit {
     this.erroSorteio = '';
     this.sorteioSimulado = null;
     this.ultimaAposta = null;
+    this.resultadosSorteio = [];
 
     this.sorteioService.simularSorteio(this.usuarioLogado.usuarioId)
       .pipe(
@@ -327,7 +330,8 @@ export class DashboardPage implements OnInit {
       .subscribe({
         next: resposta => {
           this.sorteioSimulado = resposta;
-          this.ultimaAposta = resposta.apostasProcessadas?.[0] ?? null;
+          this.resultadosSorteio = resposta.apostasProcessadas ?? [];
+          this.ultimaAposta = this.resultadosSorteio.length === 1 ? this.resultadosSorteio[0] : null;
           this.sucessoAposta = resposta.mensagem;
 
           this.cdr.detectChanges();
@@ -484,6 +488,20 @@ export class DashboardPage implements OnInit {
     }
 
     return '';
+  }
+
+  obterTextoResultadoAposta(aposta: ApostaResponse): string {
+    const tipo = aposta.tipoAposta || 'GRUPO';
+
+    if (tipo === 'GRUPO') {
+      return `Grupo ${aposta.numeroEscolhido} - ${aposta.animalEscolhido}`;
+    }
+
+    if (tipo === 'DUQUE_DE_DEZENA') {
+      return `${this.obterRotuloTipo(tipo)}: ${aposta.numeroApostado} e ${aposta.segundoNumero}`;
+    }
+
+    return `${this.obterRotuloTipo(tipo)}: ${aposta.numeroApostado}`;
   }
 
   obterTextoAposta(item: ApostaHistorico): string {

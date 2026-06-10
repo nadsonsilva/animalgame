@@ -385,3 +385,37 @@ tbody td {
     grid-template-columns: 1fr;
   }
 }
+
+.processed-results-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.processed-result-card {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.processed-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.processed-result-header span {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.processed-result-header strong {
+  color: #f8fafc;
+}
+
+.compact-result-grid {
+  margin-top: 0;
+}
