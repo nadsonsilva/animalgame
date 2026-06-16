@@ -137,6 +137,10 @@ class ApostaServiceTest {
     }
     @Test
     void devePagarPremioCercadoQuandoGrupoSairDoSegundoAoQuintoPremio() {
+
+        // A aposta já foi registrada anteriormente e o valor já foi descontado
+        usuario.setSaldo(90.0);
+
         Aposta aposta = new Aposta();
         aposta.setUsuario(usuario);
         aposta.setAnimal(animal);
@@ -151,8 +155,10 @@ class ApostaServiceTest {
         animalCabeca.setNome("Águia");
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
         when(apostaRepository.findByUsuarioAndStatusOrderByDataHoraAsc(usuario, "PENDENTE"))
                 .thenReturn(List.of(aposta));
+
         when(sorteioService.sortearCincoMilhares())
                 .thenReturn(new String[]{"0005", "0001", "0009", "0013", "0017"});
 
@@ -168,20 +174,36 @@ class ApostaServiceTest {
         when(sorteioService.obterGrupoPorMilhar("0013")).thenReturn(4);
         when(sorteioService.obterGrupoPorMilhar("0017")).thenReturn(5);
 
-        when(sorteioService.calcularPremioCercado(10.0)).thenReturn(36.0);
+        when(sorteioService.calcularPremioCercado(10.0))
+                .thenReturn(36.0);
 
-        when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
-        when(apostaRepository.save(any(Aposta.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(animalRepository.findByGrupo(1))
+                .thenReturn(Optional.of(animal));
 
-        SorteioResponseDTO resultado = apostaService.simularSorteioParaUsuario(1L);
+        when(apostaRepository.save(any(Aposta.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SorteioResponseDTO resultado =
+                apostaService.simularSorteioParaUsuario(1L);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.getApostasProcessadas().size());
         assertEquals("FINALIZADA", aposta.getStatus());
         assertTrue(aposta.getVencedora());
         assertEquals(36.0, aposta.getPremio());
+
+        // saldo correto:
+        // 90 (saldo após registrar aposta)
+        // + 36 (prêmio cercado)
+        // = 126
         assertEquals(126.0, usuario.getSaldo());
-        assertTrue(resultado.getApostasProcessadas().get(0).getResultadoComparado().contains("Cercado"));
+
+        assertTrue(
+                resultado.getApostasProcessadas()
+                        .get(0)
+                        .getResultadoComparado()
+                        .contains("Cercado")
+        );
     }
 
 }
