@@ -123,7 +123,7 @@ class ApostaServiceTest {
         when(sorteioService.obterGrupoPorMilhar("0009")).thenReturn(3);
         when(sorteioService.obterGrupoPorMilhar("0013")).thenReturn(4);
         when(sorteioService.obterGrupoPorMilhar("0017")).thenReturn(5);
-        when(sorteioService.calcularPremio(10.0)).thenReturn(180.0);
+        when(sorteioService.calcularPremioCabeca(10.0)).thenReturn(180.0);
         when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
         when(apostaRepository.save(any(Aposta.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -135,4 +135,53 @@ class ApostaServiceTest {
         assertTrue(aposta.getVencedora());
         assertEquals(180.0, aposta.getPremio());
     }
+    @Test
+    void devePagarPremioCercadoQuandoGrupoSairDoSegundoAoQuintoPremio() {
+        Aposta aposta = new Aposta();
+        aposta.setUsuario(usuario);
+        aposta.setAnimal(animal);
+        aposta.setValor(10.0);
+        aposta.setVencedora(false);
+        aposta.setPremio(0.0);
+        aposta.setTipoAposta("GRUPO");
+        aposta.setStatus("PENDENTE");
+
+        Animal animalCabeca = new Animal();
+        animalCabeca.setGrupo(2);
+        animalCabeca.setNome("Águia");
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(apostaRepository.findByUsuarioAndStatusOrderByDataHoraAsc(usuario, "PENDENTE"))
+                .thenReturn(List.of(aposta));
+        when(sorteioService.sortearCincoMilhares())
+                .thenReturn(new String[]{"0005", "0001", "0009", "0013", "0017"});
+
+        when(sorteioService.obterDezena("0005")).thenReturn("05");
+        when(sorteioService.obterDezena("0001")).thenReturn("01");
+        when(sorteioService.obterDezena("0009")).thenReturn("09");
+        when(sorteioService.obterDezena("0013")).thenReturn("13");
+        when(sorteioService.obterDezena("0017")).thenReturn("17");
+
+        when(sorteioService.obterGrupoPorMilhar("0005")).thenReturn(2);
+        when(sorteioService.obterGrupoPorMilhar("0001")).thenReturn(1);
+        when(sorteioService.obterGrupoPorMilhar("0009")).thenReturn(3);
+        when(sorteioService.obterGrupoPorMilhar("0013")).thenReturn(4);
+        when(sorteioService.obterGrupoPorMilhar("0017")).thenReturn(5);
+
+        when(sorteioService.calcularPremioCercado(10.0)).thenReturn(36.0);
+
+        when(animalRepository.findByGrupo(1)).thenReturn(Optional.of(animal));
+        when(apostaRepository.save(any(Aposta.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SorteioResponseDTO resultado = apostaService.simularSorteioParaUsuario(1L);
+
+        assertNotNull(resultado);
+        assertEquals(1, resultado.getApostasProcessadas().size());
+        assertEquals("FINALIZADA", aposta.getStatus());
+        assertTrue(aposta.getVencedora());
+        assertEquals(36.0, aposta.getPremio());
+        assertEquals(126.0, usuario.getSaldo());
+        assertTrue(resultado.getApostasProcessadas().get(0).getResultadoComparado().contains("Cercado"));
+    }
+
 }

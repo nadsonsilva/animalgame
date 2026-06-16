@@ -44,6 +44,14 @@ public class SorteioService {
     }
 
     public double calcularPremio(double valorAposta) {
+        return calcularPremioCabeca(valorAposta);
+    }
+
+    public double calcularPremioCabeca(double valorAposta) {
         return valorAposta * 18;
+    }
+
+    public double calcularPremioCercado(double valorAposta) {
+        return calcularPremioCabeca(valorAposta) / 5;
     }
 }

@@ -169,30 +169,28 @@ public class ApostaService {
     }
 
     private ApostaResponseDTO processarResultadoDaAposta(Aposta aposta, String[] premiosSorteados) {
-        String primeiroPremio = premiosSorteados[0];
-        int grupoSorteado = sorteioService.obterGrupoPorMilhar(primeiroPremio);
-
-        Animal animalSorteado = animalRepository.findByGrupo(grupoSorteado)
-                .orElseThrow(() -> new RegraNegocioException("Animal sorteado não encontrado"));
-
-        boolean venceu = verificarResultado(
+        ResultadoConferencia resultado = conferirResultado(
                 aposta.getTipoAposta(),
                 aposta.getAnimal().getGrupo(),
                 aposta.getNumeroApostado(),
                 aposta.getSegundoNumero(),
-                premiosSorteados
+                premiosSorteados,
+                aposta.getValor()
         );
 
-        double premio = venceu ? sorteioService.calcularPremio(aposta.getValor()) : 0.0;
+        int grupoSorteado = resultado.grupoReferencia;
 
-        aposta.setVencedora(venceu);
-        aposta.setPremio(premio);
+        Animal animalSorteado = animalRepository.findByGrupo(grupoSorteado)
+                .orElseThrow(() -> new RegraNegocioException("Animal sorteado não encontrado"));
+
+        aposta.setVencedora(resultado.venceu);
+        aposta.setPremio(resultado.premio);
         aposta.setStatus(STATUS_FINALIZADA);
         aposta.setNumeroSorteado(String.join(", ", premiosSorteados));
 
-        if (venceu) {
+        if (resultado.venceu) {
             Usuario usuario = aposta.getUsuario();
-            usuario.setSaldo(usuario.getSaldo() + premio);
+            usuario.setSaldo(usuario.getSaldo() + resultado.premio);
             usuarioRepository.save(usuario);
         }
 
@@ -202,9 +200,9 @@ public class ApostaService {
                 apostaSalva,
                 grupoSorteado,
                 animalSorteado,
-                primeiroPremio,
+                resultado.milharReferencia,
                 Arrays.asList(premiosSorteados),
-                montarResultadoComparado(aposta.getTipoAposta(), premiosSorteados)
+                resultado.resultadoComparado
         );
     }
 
@@ -351,54 +349,161 @@ public class ApostaService {
                 .orElseThrow(() -> new RegraNegocioException("Animal não encontrado"));
     }
 
-    private boolean verificarResultado(String tipo, Integer grupoAnimal, String numeroApostado,
-                                       String segundoNumero, String[] premiosSorteados) {
-        String primeiroPremio = premiosSorteados[0];
-
+    private boolean premioCorrespondeAoTipo(String tipo, Integer grupoAnimal, String numeroApostado,
+                                            String segundoNumero, String premio, String[] premiosSorteados,
+                                            int indicePremio) {
         if (TIPO_GRUPO.equals(tipo)) {
-            return grupoAnimal.equals(sorteioService.obterGrupoPorMilhar(primeiroPremio));
+            return grupoAnimal.equals(sorteioService.obterGrupoPorMilhar(premio));
         }
 
         if (TIPO_DEZENA.equals(tipo)) {
-            return numeroApostado.equals(sorteioService.obterDezena(primeiroPremio));
+            return numeroApostado.equals(sorteioService.obterDezena(premio));
         }
 
         if (TIPO_CENTENA.equals(tipo)) {
-            return numeroApostado.equals(sorteioService.obterCentena(primeiroPremio));
+            return numeroApostado.equals(sorteioService.obterCentena(premio));
         }
 
         if (TIPO_MILHAR.equals(tipo)) {
-            return numeroApostado.equals(primeiroPremio);
+            return numeroApostado.equals(premio);
         }
 
+        return false;
+    }
+
+    private ResultadoConferencia conferirResultado(String tipo, Integer grupoAnimal, String numeroApostado,
+                                                 String segundoNumero, String[] premiosSorteados,
+                                                 double valorApostado) {
+        if (TIPO_DUQUE_DEZENA.equals(tipo)) {
+            return conferirDuqueDeDezena(numeroApostado, segundoNumero, premiosSorteados, valorApostado);
+        }
+
+        for (int i = 0; i < premiosSorteados.length; i++) {
+            String premio = premiosSorteados[i];
+
+            if (premioCorrespondeAoTipo(tipo, grupoAnimal, numeroApostado, segundoNumero, premio, premiosSorteados, i)) {
+                boolean cabeca = i == 0;
+                double valorPremio = cabeca
+                        ? sorteioService.calcularPremioCabeca(valorApostado)
+                        : sorteioService.calcularPremioCercado(valorApostado);
+
+                return new ResultadoConferencia(
+                        true,
+                        valorPremio,
+                        premio,
+                        sorteioService.obterGrupoPorMilhar(premio),
+                        montarResultadoComparado(tipo, premiosSorteados, i, cabeca)
+                );
+            }
+        }
+
+        String primeiroPremio = premiosSorteados[0];
+
+        return new ResultadoConferencia(
+                false,
+                0.0,
+                primeiroPremio,
+                sorteioService.obterGrupoPorMilhar(primeiroPremio),
+                montarResultadoComparado(tipo, premiosSorteados, -1, false)
+        );
+    }
+
+
+    private ResultadoConferencia conferirDuqueDeDezena(String numeroApostado, String segundoNumero,
+                                                       String[] premiosSorteados, double valorApostado) {
         List<String> dezenasSorteadas = Arrays.stream(premiosSorteados)
                 .map(sorteioService::obterDezena)
                 .collect(Collectors.toList());
 
-        return dezenasSorteadas.contains(numeroApostado) && dezenasSorteadas.contains(segundoNumero);
-    }
-
-    private String montarResultadoComparado(String tipo, String[] premiosSorteados) {
         String primeiroPremio = premiosSorteados[0];
 
+        if (dezenasSorteadas.contains(numeroApostado) && dezenasSorteadas.contains(segundoNumero)) {
+            return new ResultadoConferencia(
+                    true,
+                    sorteioService.calcularPremioCercado(valorApostado),
+                    primeiroPremio,
+                    sorteioService.obterGrupoPorMilhar(primeiroPremio),
+                    "Cercado: Duque de dezena encontrado nos 5 prêmios"
+            );
+        }
+
+        return new ResultadoConferencia(
+                false,
+                0.0,
+                primeiroPremio,
+                sorteioService.obterGrupoPorMilhar(primeiroPremio),
+                montarResultadoComparado(TIPO_DUQUE_DEZENA, premiosSorteados, -1, false)
+        );
+    }
+
+    private String montarResultadoComparado(String tipo, String[] premiosSorteados, int indiceVencedor, boolean cabeca) {
+        if (indiceVencedor >= 0) {
+            String premioVencedor = premiosSorteados[indiceVencedor];
+            String posicao = (indiceVencedor + 1) + "º prêmio";
+            String modalidade = cabeca ? "Cabeça" : "Cercado";
+
+            if (TIPO_GRUPO.equals(tipo)) {
+                return modalidade + " (" + posicao + "): Grupo " + sorteioService.obterGrupoPorMilhar(premioVencedor);
+            }
+
+            if (TIPO_DEZENA.equals(tipo)) {
+                return modalidade + " (" + posicao + "): Dezena " + sorteioService.obterDezena(premioVencedor);
+            }
+
+            if (TIPO_CENTENA.equals(tipo)) {
+                return modalidade + " (" + posicao + "): Centena " + sorteioService.obterCentena(premioVencedor);
+            }
+
+            if (TIPO_MILHAR.equals(tipo)) {
+                return modalidade + " (" + posicao + "): Milhar " + premioVencedor;
+            }
+
+            return modalidade + ": Duque de dezena encontrado nos 5 prêmios";
+        }
+
         if (TIPO_GRUPO.equals(tipo)) {
-            return String.valueOf(sorteioService.obterGrupoPorMilhar(primeiroPremio));
+            return Arrays.stream(premiosSorteados)
+                    .map(premio -> String.valueOf(sorteioService.obterGrupoPorMilhar(premio)))
+                    .collect(Collectors.joining(", "));
         }
 
         if (TIPO_DEZENA.equals(tipo)) {
-            return sorteioService.obterDezena(primeiroPremio);
+            return Arrays.stream(premiosSorteados)
+                    .map(sorteioService::obterDezena)
+                    .collect(Collectors.joining(", "));
         }
 
         if (TIPO_CENTENA.equals(tipo)) {
-            return sorteioService.obterCentena(primeiroPremio);
+            return Arrays.stream(premiosSorteados)
+                    .map(sorteioService::obterCentena)
+                    .collect(Collectors.joining(", "));
         }
 
         if (TIPO_MILHAR.equals(tipo)) {
-            return primeiroPremio;
+            return String.join(", ", premiosSorteados);
         }
 
         return Arrays.stream(premiosSorteados)
                 .map(sorteioService::obterDezena)
                 .collect(Collectors.joining(", "));
     }
+
+    private static class ResultadoConferencia {
+
+        private final boolean venceu;
+        private final double premio;
+        private final String milharReferencia;
+        private final int grupoReferencia;
+        private final String resultadoComparado;
+
+        private ResultadoConferencia(boolean venceu, double premio, String milharReferencia,
+                                     int grupoReferencia, String resultadoComparado) {
+            this.venceu = venceu;
+            this.premio = premio;
+            this.milharReferencia = milharReferencia;
+            this.grupoReferencia = grupoReferencia;
+            this.resultadoComparado = resultadoComparado;
+        }
+    }
+
 }
