@@ -1,59 +1,144 @@
-# MyProject
+# Frontend - AnimalGame
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.5.
+Frontend do sistema AnimalGame desenvolvido em Angular.
 
-## Development server
+A aplicação permite que usuários realizem cadastro, login, depósitos de saldo fictício, registro de apostas, simulação de sorteios e consulta ao histórico de apostas.
 
-To start a local development server, run:
+## Tecnologias utilizadas
+
+* Angular 21.1.5
+* TypeScript
+* HTML5
+* CSS3
+
+## Funcionalidades
+
+* Cadastro de usuário
+* Login com autenticação JWT
+* Visualização de saldo
+* Depósito de saldo fictício
+* Registro de apostas
+* Tabela dos 25 grupos do jogo do bicho
+* Exibição das dezenas correspondentes a cada grupo
+* Simulação de sorteio
+* Exibição dos 5 prêmios sorteados
+* Processamento das apostas pendentes
+* Histórico de apostas do usuário
+* Dashboard completo
+
+## Modalidades de aposta
+
+O sistema suporta as seguintes modalidades:
+
+* Grupo
+* Dezena
+* Centena
+* Milhar
+* Duque de dezena
+
+## Como executar o frontend
+
+Entre na pasta do projeto:
+
+```bash
+cd frontend
+```
+
+Instale as dependências:
+
+```bash
+npm install
+```
+
+Execute a aplicação:
+
+```bash
+npm start
+```
+
+ou
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Após iniciar, acesse:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```text
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Integração com o backend
 
-```bash
-ng generate --help
+O frontend está configurado para consumir a API do backend em:
+
+```text
+http://localhost:8080
 ```
 
-## Building
+Antes de iniciar o frontend, certifique-se de que o backend esteja em execução.
 
-To build the project run:
+## Como iniciar o backend
+
+Entre na pasta `backend`:
+
+```bash
+cd backend
+```
+
+Execute:
+
+```bash
+./mvnw clean spring-boot:run
+```
+
+No Windows PowerShell:
+
+```powershell
+.\mvnw.cmd clean spring-boot:run
+```
+
+O parâmetro `clean` remove arquivos compilados antigos da pasta `target`, evitando problemas de compilação causados por cache do Maven.
+
+## Fluxo de utilização
+
+1. Cadastre um usuário.
+2. Faça login.
+3. Realize um depósito de saldo fictício.
+4. Registre uma ou mais apostas.
+5. As apostas ficam com status `PENDENTE`.
+6. Execute a simulação de sorteio.
+7. O sistema gera 5 milhares.
+8. As apostas pendentes do usuário logado são processadas.
+9. O resultado é exibido na tela.
+10. O histórico e o saldo são atualizados automaticamente.
+
+## Build para produção
+
+Para gerar a versão de produção:
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Os arquivos compilados serão gerados na pasta:
 
-## Running unit tests
+```text
+dist/
+```
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Testes
+
+Para executar os testes do frontend:
 
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
+## Observações
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+* O frontend utiliza autenticação baseada em JWT.
+* O sistema utiliza saldo fictício para fins acadêmicos.
+* O frontend foi desenvolvido para integração com Spring Boot 2.7.18.
+* O projeto mantém as versões originais das tecnologias definidas inicialmente.
+* Recomenda-se iniciar primeiro o banco de dados, depois o backend e por último o frontend.
